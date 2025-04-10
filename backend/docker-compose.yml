@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:14-alpine
+    container_name: aiot-postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aiot-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: aiot-pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@aiotmonitor.com
+      - PGADMIN_DEFAULT_PASSWORD=admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - aiot-network
+
+  api:
+    build: .
+    container_name: aiot-api
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+      - POSTGRES_SERVER=postgres
+    networks:
+      - aiot-network
+
+
+networks:
+  aiot-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
