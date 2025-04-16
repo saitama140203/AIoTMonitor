@@ -10,6 +10,37 @@ from app.core.security import get_password_hash, verify_password, create_access_
 from app.core.config import settings
 from app.models.user import User, UserRole
 from app.schemas.user import UserCreate, Token, UserPasswordUpdate
+from typing import Optional
+
+
+from sqlalchemy.orm import Session
+from typing import List, Optional
+from app.models.user import User, UserRole
+
+
+def get_users(
+        db: Session,
+        role: Optional[str] = None,
+        skip: int = 0,
+        limit: Optional[int] = None
+) -> List[User]:
+    query = db.query(User)
+
+    if role:
+        try:
+            role_enum = UserRole[role.upper()]
+            query = query.filter(User.role == role_enum)
+        except KeyError:
+            return []
+
+    if skip:
+        query = query.offset(skip)
+
+    if limit:
+        query = query.limit(limit)
+
+    return query.all()
+
 
 
 def get_user_by_username(db: Session, username: str) -> Optional[User]:
@@ -64,26 +95,29 @@ def login(db: Session, username: str, password: str) -> Dict[str, Any]:
 
 
 def create_user(db: Session, user_in: UserCreate) -> User:
-
-    if get_user_by_username(db, username=user_in.username):
+    user_data = user_in.dict()
+    print("Creating operator user with data:", user_data)
+    user_data["role"] = user_data.pop("role")
+    user_create = UserCreate(**user_data)
+    if get_user_by_username(db, username=user_create.username):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Tên đăng nhập đã tồn tại trong hệ thống",
         )
-    if get_user_by_email(db, email=user_in.email):
+    if get_user_by_email(db, email=user_create.email):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email đã tồn tại trong hệ thống",
         )
     
     # Create new user
-    hashed_password = get_password_hash(user_in.password)
+    hashed_password = get_password_hash(user_create.password)
     db_user = User(
-        username=user_in.username,
-        email=user_in.email,
-        full_name=user_in.full_name,
+        username=user_create.username,
+        email=user_create.email,
+        full_name=user_create.full_name,
         hashed_password=hashed_password,
-        role=user_in.role,
+        role=user_create.role,
         is_active=True,
     )
     
@@ -93,26 +127,7 @@ def create_user(db: Session, user_in: UserCreate) -> User:
     return db_user
 
 
-def create_operator(db: Session, user_in: UserCreate) -> User:
-    user_data = user_in.dict()
-    print("Creating operator user with data:", user_data)
-    user_data["role"] = UserRole.OPERATOR
-    user_create = UserCreate(**user_data)
-    return create_user(db=db, user_in=user_create)
 
-
-def create_supervisor(db: Session, user_in: UserCreate) -> User:
-    user_data = user_in.dict()
-    user_data["role"] = UserRole.SUPERVISOR
-    user_create = UserCreate(**user_data)
-    return create_user(db=db, user_in=user_create)
-
-
-def create_team_lead(db: Session, user_in: UserCreate) -> User:
-    user_data = user_in.dict()
-    user_data["role"] = UserRole.TEAM_LEAD
-    user_create = UserCreate(**user_data)
-    return create_user(db=db, user_in=user_create)
 
 
 def update_password(db: Session, user_id: int, password_update: UserPasswordUpdate) -> User:

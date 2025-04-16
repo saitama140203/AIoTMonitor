@@ -10,7 +10,7 @@ from app.schemas.user import (
 )
 from app.services.user import (
     login, create_user, update_password, reset_password,
-    create_operator, create_supervisor, create_team_lead
+    create_user
 )
 from app.models.user import UserRole
 
@@ -59,37 +59,15 @@ def update_user_password(
     return {"message": "Cập nhật mật khẩu thành công"}
 
 
-@router.post("/create-operator", response_model=User, status_code=status.HTTP_201_CREATED)
-def create_operator_user(
+@router.post("/users", response_model=User, status_code=status.HTTP_201_CREATED)
+def create_user_route(
     user_in: UserCreateOperator,
     current_user: User = Depends(get_current_active_admin),
     db: Session = Depends(get_db)
 ) -> Any:
     """
-    Admin tạo người dùng mới với vai trò Operator
+    Admin tạo người dùng mới
     """
-    return create_operator(db, user_in)
+    return create_user(db, user_in)
 
 
-@router.post("/create-supervisor", response_model=User, status_code=status.HTTP_201_CREATED)
-def create_supervisor_user(
-    user_in: UserCreateSupervisor ,
-    current_user: User = Depends(get_current_active_admin),
-    db: Session = Depends(get_db)
-) -> Any:
-    """
-    Admin tạo người dùng mới với vai trò Supervisor
-    """
-    return create_supervisor(db, user_in)
-
-
-@router.post("/create-team-lead", response_model=User, status_code=status.HTTP_201_CREATED)
-def create_team_lead_user(
-    user_in: UserCreateTeamLead,
-    current_user: User = Depends(get_current_active_admin),
-    db: Session = Depends(get_db)
-) -> Any:
-    """
-    Admin tạo người dùng mới với vai trò Team Lead
-    """
-    return create_team_lead(db, user_in)

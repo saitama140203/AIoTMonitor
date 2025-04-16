@@ -3,11 +3,11 @@ from typing import Optional, List
 from datetime import datetime
 from app.models.user import UserRole
 
-
 class UserBase(BaseModel):
     username: str
     email: EmailStr
     full_name: Optional[str] = None
+    role : UserRole
     
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8)

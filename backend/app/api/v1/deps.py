@@ -59,3 +59,13 @@ def get_current_active_admin(
             detail="Bạn không có quyền truy cập chức năng này",
         )
     return current_user
+
+def get_current_active_admin_or_teamlead(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    if current_user.role != UserRole.ADMIN and current_user.role != UserRole.TEAM_LEAD:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn không có quyền truy cập chức năng này",
+        )
+    return current_user
