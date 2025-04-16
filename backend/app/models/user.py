@@ -1,30 +1,42 @@
-from sqlalchemy import Column, Integer, String, Boolean, Enum, DateTime, ForeignKey
+# app/models/user.py
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-import enum
-
 from app.db.base_class import Base
-
-
-class UserRole(str, enum.Enum):
-    ADMIN = "admin"
-    OPERATOR = "operator"
-    SUPERVISOR = "supervisor"
-    TEAM_LEAD = "team_lead"
-
 
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True, nullable=False)
-    email = Column(String, unique=True, index=True, nullable=False)
-    full_name = Column(String, nullable=True)
-    hashed_password = Column(String, nullable=False)
-    role = Column(Enum(UserRole), nullable=False)
+    username = Column(String(50), unique=True, index=True, nullable=False)
+    email = Column(String(100), unique=True, index=True, nullable=False)
+    full_name = Column(String(100))
+    hashed_password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
-    # Relationship with logs
+
+    # Relationships
+    roles = relationship("UserRole", back_populates="user")
+    devices = relationship("Device", back_populates="creator")
+    commands = relationship("Command", back_populates="creator")
     activity_logs = relationship("ActivityLog", back_populates="user")
+
+class Role(Base):
+    __tablename__ = "roles"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), unique=True)
+    description = Column(String(255))
+    
+    users = relationship("UserRole", back_populates="role")
+
+class UserRole(Base):
+    __tablename__ = "user_role"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    role_id = Column(Integer, ForeignKey("roles.id"))
+
+    user = relationship("User", back_populates="roles")
+    role = relationship("Role", back_populates="users")
