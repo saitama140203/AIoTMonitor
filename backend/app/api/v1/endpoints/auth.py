@@ -2,94 +2,103 @@ from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import Any, Dict
-
-from ...v1.deps import get_db, get_current_user, get_current_active_admin
+from typing import List
+from app.api.v1.deps import get_db, get_current_user, get_current_admin
 from app.schemas.user import (
-    User, UserCreate, Token, UserPasswordUpdate, 
-    UserPasswordReset, UserCreateOperator, UserCreateSupervisor, UserCreateTeamLead
+    UserCreate, Token, UserPasswordUpdate,
+    UserPasswordReset, UserResponse
 )
 from app.services.user import (
-    login, create_user, update_password, reset_password,
-    create_operator, create_supervisor, create_team_lead
+    login, update_password, reset_password, create_user_with_roles, get_roles
 )
-from app.models.user import UserRole
-
+from app.models.user import User
 
 router = APIRouter()
 
-
-@router.post("/login", response_model=Dict[str, Any], status_code=status.HTTP_200_OK)
+@router.post("/login", response_model=Token, status_code=status.HTTP_200_OK)
 def login_access_token(
     db: Session = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:
     """
-    Admin login - lấy token truy cập
+    Đăng nhập và nhận token truy cập (cho mọi role)
     """
-    return login(db, form_data.username, form_data.password)
-
+    try:
+        result = login(db, form_data.username, form_data.password)
+        return result
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi đăng nhập: {str(e)}"
+        )
 
 @router.put("/reset-password", status_code=status.HTTP_200_OK)
 def reset_user_password(
     reset_data: UserPasswordReset,
-    current_user: User = Depends(get_current_active_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin)
 ) -> Dict[str, Any]:
     """
-    Admin đặt lại mật khẩu người dùng
+    Admin reset mật khẩu người dùng khác
     """
-    new_password = reset_password(db, email=reset_data.email)
-    return {
-        "message": "Đặt lại mật khẩu thành công",
-        "temp_password": new_password,
-        "email": reset_data.email
-    }
-
+    try:
+        new_password = reset_password(db, email=reset_data.email)
+        return {
+            "message": "Đặt lại mật khẩu thành công",
+            "temp_password": new_password,
+            "email": reset_data.email
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi reset mật khẩu: {str(e)}"
+        )
 
 @router.put("/update-password", response_model=Dict[str, Any], status_code=status.HTTP_200_OK)
 def update_user_password(
     password_update: UserPasswordUpdate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ) -> Any:
     """
-    Admin (hoặc bất kỳ người dùng nào) cập nhật mật khẩu của mình
+    Cập nhật mật khẩu cho user hiện tại
     """
-    user = update_password(db, current_user.id, password_update)
-    return {"message": "Cập nhật mật khẩu thành công"}
+    try:
+        user = update_password(db, current_user.id, password_update)
+        return {"message": "Cập nhật mật khẩu thành công"}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi cập nhật mật khẩu: {str(e)}"
+        )
 
-
-@router.post("/create-operator", response_model=User, status_code=status.HTTP_201_CREATED)
-def create_operator_user(
-    user_in: UserCreateOperator,
-    current_user: User = Depends(get_current_active_admin),
-    db: Session = Depends(get_db)
-) -> Any:
+@router.post("/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+def create_user(
+    user_data: UserCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin)
+):
     """
-    Admin tạo người dùng mới với vai trò Operator
+    Tạo user mới với nhiều role (Admin only)
     """
-    return create_operator(db, user_in)
-
-
-@router.post("/create-supervisor", response_model=User, status_code=status.HTTP_201_CREATED)
-def create_supervisor_user(
-    user_in: UserCreateSupervisor ,
-    current_user: User = Depends(get_current_active_admin),
-    db: Session = Depends(get_db)
-) -> Any:
-    """
-    Admin tạo người dùng mới với vai trò Supervisor
-    """
-    return create_supervisor(db, user_in)
-
-
-@router.post("/create-team-lead", response_model=User, status_code=status.HTTP_201_CREATED)
-def create_team_lead_user(
-    user_in: UserCreateTeamLead,
-    current_user: User = Depends(get_current_active_admin),
-    db: Session = Depends(get_db)
-) -> Any:
-    """
-    Admin tạo người dùng mới với vai trò Team Lead
-    """
-    return create_team_lead(db, user_in)
+    try:
+        return create_user_with_roles(db, user_data)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi hệ thống khi tạo user: {str(e)}"
+        )
+@router.get("/roles", status_code=status.HTTP_200_OK)
+def admin_get_roles(  
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin)) -> List[str]:
+    roles = get_roles(db)
+    return roles

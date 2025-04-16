@@ -36,13 +36,13 @@ def upgrade() -> None:
     op.create_index(op.f('ix_users_id'), 'users', ['id'], unique=False)
     op.create_index(op.f('ix_users_username'), 'users', ['username'], unique=True)
     # insert acc admin
-    op.execute(
-        """
-        INSERT INTO users (username, email, full_name, hashed_password, role, is_active)
-        VALUES ('admin', 'admin@aiotmonitor.com', 'Administrator', 
-        '$2b$12$/olbAOLO/ECDHvoP3ETrd.vPTUI2lJF6Dw9.lMzndIDgorHPIouCa', 'ADMIN', true)
-        """
-    )
+    # op.execute(
+    #     """
+    #     INSERT INTO users (username, email, full_name, hashed_password, role, is_active)
+    #     VALUES ('admin', 'admin@aiotmonitor.com', 'Administrator', 
+    #     '$2b$12$/olbAOLO/ECDHvoP3ETrd.vPTUI2lJF6Dw9.lMzndIDgorHPIouCa', 'ADMIN', true)
+    #     """
+    # )
     # Mật khẩu mặc định là "admin123", đã được bcrypt hash
 
     # op.create_table('activity_logs',
