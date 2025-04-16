@@ -8,28 +8,28 @@
   </route>
 
 <script setup lang="ts">
-import type { CallbackTypes } from 'vue3-google-login'
 import { useAuthStore } from '@/stores/auth'
 import { loginValidator } from '@/utils/validation'
 import { toTypedSchema } from '@vee-validate/zod'
+import { useAsyncState } from '@vueuse/core'
 import { useForm } from 'vee-validate'
 import { RouterLink } from 'vue-router'
-import { GoogleLogin } from 'vue3-google-login'
-
-import z from 'zod'
 
 const authStore = useAuthStore()
-
 const form = useForm({
   validationSchema: toTypedSchema(loginValidator),
 })
 
-const onSubmit = form.handleSubmit(async (values) => {
-  authStore.login(values)
+const { isLoading, execute } = useAsyncState(authStore.login, null, {
+  immediate: false,
+  onError: (error) => {
+    Promise.reject(error)
+  },
 })
-const callback: CallbackTypes.TokenResponseCallback = (response) => {
-  console.log('Access token:', response.access_token)
-}
+
+const onSubmit = form.handleSubmit(async (values) => {
+  await execute(0, values)
+})
 </script>
 
 <template>
@@ -40,38 +40,25 @@ const callback: CallbackTypes.TokenResponseCallback = (response) => {
           Login
         </CardTitle>
         <CardDescription class="text-center">
-          Enter your email below to login to your account
+          Enter your credentials to access your account.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div class="grid gap-4">
           <div class="grid gap-2">
-            <InputValidator id="email" type="email" label="Email" placeholder="m@gmai.com" name="email" />
+            <InputValidator id="username" label="Username" placeholder="Enter username" name="username" />
             <div class="grid gap-2">
               <InputValidator id="password" type="password" placeholder="Password" label="Password" name="password" />
-              <RouterLink to="/auth/forgot-password" class="ml-auto text-sm underline">
-                Forgot your password?
-              </RouterLink>
             </div>
           </div>
-          <Button type="submit">
+          <Button
+            type="submit"
+            :is-loading="isLoading"
+          >
             Login
           </Button>
         </div>
-        <div class="mt-4 text-center text-sm">
-          Don't have an account?
-          <RouterLink to="/auth/signup" class="underline">
-            Sign up
-          </RouterLink>
-        </div>
-        <Separator label="Or" style-label="bg-transparent" class="my-4" />
-        <GoogleLogin :callback="callback" class="w-full" popup-type="TOKEN">
-          <Button type="button" class="w-full">
-            <Icon name="IconGoogle" class="w-8 h-8" />
-            Login with Google
-          </Button>
-        </GoogleLogin>
-      </cardcontent>
+      </CardContent>
     </Card>
   </form>
 </template>

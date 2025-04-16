@@ -1,8 +1,11 @@
-import { fetchUserData } from '@/api/user'
+import type { BodyUpdatePassword } from '@/types'
+import { changePassword } from '@/api/user'
+import { useAuthStore } from '@/stores/auth'
 import { defineStore } from 'pinia'
 
 export const useUserStore = defineStore('user', () => {
   const user = ref(null)
+  const authStore = useAuthStore()
 
   function setUser(newUser: any) {
     user.value = newUser
@@ -11,15 +14,25 @@ export const useUserStore = defineStore('user', () => {
     user.value = null
   }
   async function getUserData() {
-    const data = await fetchUserData()
-    setUser(data)
+    const data = localStorage.getItem('aiot_user')
+    if (data) {
+      setUser(JSON.parse(data))
+    }
   }
+
+  async function updatePasswword(payload: BodyUpdatePassword) {
+    await changePassword(payload)
+    authStore.logout()
+  }
+
   const isAuthenticated = computed(() => !!user.value)
+
   return {
     user,
     setUser,
-    isAuthenticated,
     removeUser,
-    getUserData
+    getUserData,
+    updatePasswword,
+    isAuthenticated,
   }
 })

@@ -1,21 +1,9 @@
-import type { EmailData, LoginData, RegisterData, ResetPasswordData } from '@/utils/types'
+import type { EmailData, LoginData, RegisterData, ResetPasswordData } from '@/types'
 import { $post } from './axios'
 
-export function apiLogin(data: LoginData) {
+export function apiLogin(body: LoginData) {
+  const data = new FormData()
+  data.append('username', body.username)
+  data.append('password', body.password)
   return $post('/auth/login', data)
-}
-
-export function apiRegister(data: RegisterData) {
-  return $post('/auth/register', data)
-}
-
-export function forgotPassword(data: EmailData) {
-  return $post('/auth/forgot-password', data)
-}
-
-export function requestResetPassword(data: ResetPasswordData) {
-  return $post(`/auth/reset-password/${data.token}`, {
-    password: data.password,
-    confirmPassword: data.confirmPassword,
-  })
 }
