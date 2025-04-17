@@ -20,7 +20,7 @@ router.beforeEach(middlewareLayout)
 
 router.beforeEach((to, from, next) => {
   if (to.meta.title) {
-    document.title = to.meta.title as string
+    document.title = `AIoT Monitor - ${to.meta.title}`
   }
   next()
 })

@@ -1,10 +1,10 @@
-import type { EmailData, LoginData, RegisterData, ResetPasswordData } from '@/utils/types'
-import { apiLogin, apiRegister, forgotPassword, requestResetPassword } from '@/api/auth'
+import type { EmailData, LoginData, RegisterData, ResetPasswordData } from '@/types'
+import { apiLogin } from '@/api/auth'
 import { defineStore } from 'pinia'
 import { useUserStore } from './user'
 
 export const useAuthStore = defineStore('auth', () => {
-  const accessToken = ref(localStorage.getItem('accesstoken') || '')
+  const accessToken = ref(localStorage.getItem('aiot_accesstoken') || '')
   const userStore = useUserStore()
   const isAuthenticated = computed(() => !!accessToken.value)
   const router = useRouter()
@@ -12,41 +12,28 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(credentials: LoginData) {
     const data = await apiLogin(credentials)
-    localStorage.setItem('accesstoken', data.token)
-    await userStore.getUserData()
+    localStorage.setItem('aiot_accesstoken', data.access_token)
+    localStorage.setItem('aiot_user', JSON.stringify(data))
+    userStore.setUser(data)
     router.push(returnUrl.value || '/')
   }
 
   function logout() {
-    localStorage.removeItem('accesstoken')
-    userStore.removeUser()
+    localStorage.removeItem('aiot_accesstoken')
     router.push('/auth/login')
+    userStore.removeUser()
     accessToken.value = ''
-  }
-
-  function register(credentials: RegisterData) {
-    return apiRegister(credentials)
   }
 
   function setReturnUrl(url: string) {
     returnUrl.value = url
   }
-
-  function sendEmailResetPassword(data: EmailData) {
-    return forgotPassword(data)
-  }
-  function resetPassword(data: ResetPasswordData) {
-    return requestResetPassword(data)
-  }
   return {
     isAuthenticated,
     login,
     logout,
-    register,
     returnUrl,
     accessToken,
     setReturnUrl,
-    resetPassword,
-    sendEmailResetPassword,
   }
 })
