@@ -22,7 +22,7 @@ const confirmStore = useConfirmStore()
 const isAddUserModalOpen = ref(false)
 const configQuery = ref({
   page: 1,
-  limit: 10,
+  limit: 100,
   search: '',
   role: 'all',
 })
@@ -88,7 +88,7 @@ async function confirmResetPassword(user: any) {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 p-4">
+  <div class="flex flex-col gap-4 p-4 h-[calc(100vh-64px)]">
     <div class="flex justify-between">
       <div class="flex gap-2 w-[400px]">
         <div class="w-72">
@@ -120,8 +120,8 @@ async function confirmResetPassword(user: any) {
         Create User
       </Button>
     </div>
-    <div v-if="state.length > 0" class="rounded-lg overflow-hidden shadow-md w-full bg-card">
-      <div class="grid lg:grid-cols-7 grid-cols-5 gap-4 p-4 border-b font-semibold">
+    <div v-if="state.length > 0" class="relative rounded-lg overflow-hidden shadow-md w-full bg-card overflow-y-auto">
+      <div class="grid lg:grid-cols-7 grid-cols-5 gap-4 p-4 border-b font-semibold sticky top-0 bg-card z-10">
         <div>
           Username
         </div>
