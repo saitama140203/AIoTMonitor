@@ -84,9 +84,6 @@ def create_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_admin)
 ):
-    """
-    Tạo user mới với nhiều role (Admin only)
-    """
     try:
         return create_user_with_roles(db, user_data)
     except HTTPException as e:
@@ -96,6 +93,8 @@ def create_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Lỗi hệ thống khi tạo user: {str(e)}"
         )
+    
+    
 @router.get("/roles", status_code=status.HTTP_200_OK)
 def admin_get_roles(  
     db: Session = Depends(get_db),
