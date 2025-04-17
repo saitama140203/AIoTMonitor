@@ -59,20 +59,20 @@ function handleAddUser() {
 watch(configQuery, () => {
   execute()
 }, { deep: true })
-async function confirmResetPassword(email: string) {
+async function confirmResetPassword(user: any) {
   const confirm = await confirmStore.showConfirmDialog({
     title: 'Reset Password',
-    message: `Are you sure you want to reset the password for ${email}?`,
+    message: `Are you sure you want to reset the password for ${user.username}?`,
     confirmText: 'Yes, reset it!',
     cancelText: 'No, cancel!',
   })
   if (confirm) {
     // User confirmed the action
     try {
-      await adminStore.resetPassword(email)
+      const data = await adminStore.resetPassword(user.email)
       toast({
-        title: 'Password reset successfully',
-        description: `The password for ${email} has been reset successfully.`,
+        title: 'Password Reset Successfully',
+        description: `"${data.temp_password}" is the new password for ${user.username}.`,
       })
     }
     catch (error: any) {
@@ -170,7 +170,7 @@ async function confirmResetPassword(email: string) {
             <DropdownMenuContent class="">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem class="cursor-pointer" @click="confirmResetPassword(user.email)">
+              <DropdownMenuItem class="cursor-pointer" @click="confirmResetPassword(user)">
                 Reset Password
               </DropdownMenuItem>
             </DropdownMenuContent>
