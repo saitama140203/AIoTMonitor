@@ -1,5 +1,4 @@
-# app/schemas/device.py
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
@@ -17,35 +16,28 @@ class DeviceCreate(BaseModel):
     platform: str
 
 class DeviceUpdate(BaseModel):
-    status: Optional[str] = None
-    lastseen: Optional[datetime] = None
-
-class DeviceResponse(DeviceBase):
-    id: int
+    name: str
+    mac: Optional[str] = None
+    ip: str
+    platform: str
     status: str
-    lastseen: datetime
-    created_by: int
-    
+
+class DeviceResponse(BaseModel):
+    name: str
+    mac: Optional[str] = None
+    ip: str
+    platform: str
+        
     class Config:
         from_attributes = True
+
+class AddDevicesToGroupRequest(BaseModel):
+    device_ids: List[int] = Field(..., min_items=1)
+    group_id: int
 
 class GroupCreate(BaseModel):
     name: str
 
 class GroupResponse(GroupCreate):
-    id: int
     created_at: datetime
     is_actived: bool
-
-class CommandCreate(BaseModel):
-    commands_text: str
-    description: str
-
-class ProfileCreate(BaseModel):
-    name: str
-    command_list_id: int
-    device_group_id: int
-
-class ProfileAssign(BaseModel):
-    profile_id: int
-    operator_id: int
