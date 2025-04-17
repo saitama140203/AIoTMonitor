@@ -9,7 +9,7 @@ const searchValue = defineModel({
 </script>
 
 <template>
-  <div class="relative w-full max-w-sm items-center">
+  <div class="relative w-full items-center">
     <Input id="search" v-model="searchValue" type="text" :placeholder="placeholder || 'Search...'" class="px-10" />
     <span class="absolute start-0 inset-y-0 flex items-center justify-center px-2">
       <Icon name="IconSearch" class="w-5 text-muted-foreground" />

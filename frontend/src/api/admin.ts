@@ -1,18 +1,21 @@
 import type { BodyCreateUser } from '@/types'
-import { $post } from './axios'
+import { $get, $post, $put } from './axios'
 
-export function createOperator(body: BodyCreateUser) {
+export function createUser(body: BodyCreateUser) {
   const data = { ...body }
   data.full_name = body.fullName
-  return $post('/auth/create-operator', data)
+  return $post('/auth/users', data)
 }
-export function createSupervisor(body: BodyCreateUser) {
-  const data = { ...body }
-  data.full_name = body.fullName
-  return $post('/auth/create-supervisor', data)
+
+export function getListUsers(config: { role?: string, limit?: number, skip?: number }) {
+  return $get('/users/', {
+    params: {
+      role: config.role,
+      limit: config.limit,
+      skip: config.skip,
+    },
+  })
 }
-export function createTeamLead(body: BodyCreateUser) {
-  const data = { ...body }
-  data.full_name = body.fullName
-  return $post('/auth/create-team-lead', data)
+export function resetPassword(email: string) {
+  return $put('/auth/reset-password', { email })
 }

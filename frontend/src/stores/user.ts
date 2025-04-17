@@ -1,10 +1,11 @@
-import type { BodyUpdatePassword } from '@/types'
+import type { BodyUpdatePassword, User } from '@/types'
+
 import { changePassword } from '@/api/user'
 import { useAuthStore } from '@/stores/auth'
 import { defineStore } from 'pinia'
 
 export const useUserStore = defineStore('user', () => {
-  const user = ref(null)
+  const user = ref<User | null>(null)
   const authStore = useAuthStore()
 
   function setUser(newUser: any) {

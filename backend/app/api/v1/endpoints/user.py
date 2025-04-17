@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[UserSchema])
-def get_users(
+def fetch_users(
     role: Optional[str] = None,
     skip: int = 0,
     limit: Optional[int] = None,

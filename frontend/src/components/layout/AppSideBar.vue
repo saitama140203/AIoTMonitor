@@ -1,25 +1,37 @@
 <script setup>
-const data = ref({
-  groupA: [
-    {
-      id: 1,
-      icon: 'IconDashboard',
-      title: 'Dashboard',
-      url: '/',
-    },
-    {
-      id: 2,
-      icon: 'IconUserGroup',
-      title: 'Users',
-      url: '/users',
-    },
-    {
-      id: 3,
-      icon: 'IconDevice',
-      title: 'Device',
-      url: '/devices',
-    },
-  ],
+import { useUserStore } from '@/stores/user'
+import { UserRole } from '@/types'
+
+const userStore = useUserStore()
+const listNav = ref([
+  {
+    id: 1,
+    icon: 'IconDashboard',
+    title: 'Dashboard',
+    url: '/',
+  },
+  {
+    id: 2,
+    icon: 'IconUserGroup',
+    title: 'Users',
+    url: '/users',
+    roles: [UserRole.ADMIN, UserRole.TEAM_LEAD],
+  },
+  {
+    id: 3,
+    icon: 'IconDevice',
+    title: 'Device',
+    url: '/devices',
+
+  },
+])
+const listNavFilter = computed(() => {
+  return listNav.value.filter((item) => {
+    if (item.roles) {
+      return item.roles.includes(userStore?.user?.role)
+    }
+    return true
+  })
 })
 </script>
 
@@ -33,7 +45,7 @@ const data = ref({
       <div
         class="flex flex-1 flex-col overflow-auto group-data-[collapsible=icon]:overflow-hidden gap-2"
       >
-        <template v-for="item in data.groupA" :key="item.id">
+        <template v-for="item in listNavFilter" :key="item.id">
           <AppSideBarItem v-bind="item" />
         </template>
       </div>

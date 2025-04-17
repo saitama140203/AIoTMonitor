@@ -20,8 +20,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   function logout() {
     localStorage.removeItem('aiot_accesstoken')
-    userStore.removeUser()
     router.push('/auth/login')
+    userStore.removeUser()
     accessToken.value = ''
   }
 

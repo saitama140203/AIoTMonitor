@@ -3,6 +3,8 @@ export interface BodyCreateUser {
   email: string
   password: string
   fullName: string
+  full_name?: string
+  role?: UserRole
 }
 export enum UserRole {
   OPERATOR = 'operator',
@@ -10,10 +12,6 @@ export enum UserRole {
   TEAM_LEAD = 'team_lead',
   ADMIN = 'admin',
 }
-export type PayloadCreateUser = BodyCreateUser & {
-  role: UserRole
-}
-
 export interface User {
   id: string
   username: string

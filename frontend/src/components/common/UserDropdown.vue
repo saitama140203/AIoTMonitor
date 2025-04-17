@@ -11,10 +11,9 @@ const themeStore = useThemeStore()
 <template>
   <DropdownMenu v-if="userStore?.user">
     <DropdownMenuTrigger as-child>
-      <Button variant="ghost" class="relative lg:px-6 py-6 lg:w-40">
-        <div class="max-lg:hidden  grid flex-1 text-left text-sm leading-tight">
-          <span class="truncate font-semibold">{{ userStore.user.username }}</span>
-          <span class="truncate text-xs">{{ userStore.user.email }}</span>
+      <Button variant="ghost" class="relative lg:px-6 py-6 max-w-52 lg:max-w-72">
+        <div class="max-lg:hidden flex justify-end flex-1 text-left text-sm leading-tight">
+          <span class="truncate font-semibold">[{{ userStore.user.role.toUpperCase() }}] - {{ userStore.user.username }}</span>
         </div>
         <Icon name="IconArrowDown" class="ml-4" />
       </Button>

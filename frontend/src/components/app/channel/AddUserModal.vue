@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { PayloadCreateUser } from '@/types'
 import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { useAdminStore } from '@/stores/admin'
 import { UserRole } from '@/types'
@@ -17,10 +16,16 @@ const { open } = defineProps({
 
 const emit = defineEmits(['update:open', 'add'])
 const adminStore = useAdminStore()
+const listFilterRole = ref([
+  { value: UserRole.ADMIN, label: 'Admin' },
+  { value: UserRole.OPERATOR, label: 'Operator' },
+  { value: UserRole.TEAM_LEAD, label: 'Team lead' },
+])
+
 const { handleSubmit, resetForm } = useForm({
   validationSchema: toTypedSchema(createUserValidator),
 })
-const { isLoading, execute } = useAsyncState(adminStore.createUser, null, {
+const { isLoading, execute, error } = useAsyncState(adminStore.createUser, null, {
   immediate: false,
   onError: (error) => {
     Promise.reject(error)
@@ -28,11 +33,10 @@ const { isLoading, execute } = useAsyncState(adminStore.createUser, null, {
 })
 
 const onSubmit = handleSubmit(async (values) => {
-  const payload: PayloadCreateUser = {
-    ...values,
-    role: UserRole.OPERATOR,
+  const data = await execute(0, { ...values, role: values.role as UserRole })
+  if (error.value) {
+    return
   }
-  const data = await execute(0, payload)
   emit('add', data)
   emit('update:open', false)
   resetForm()
@@ -66,11 +70,11 @@ const onSubmit = handleSubmit(async (values) => {
               <SelectContent>
                 <SelectGroup>
                   <SelectItem
-                    v-for="(role, index) in UserRole"
-                    :key="index"
-                    :value="role"
+                    v-for="role in listFilterRole"
+                    :key="role.value"
+                    :value="role.value"
                   >
-                    {{ role }}
+                    {{ role.label }}
                   </SelectItem>
                 </SelectGroup>
               </SelectContent>
