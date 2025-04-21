@@ -12,3 +12,19 @@ class ProfileResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class AssignProfile(BaseModel):
+    operator_id: int
+    profile_id: int
+    # is_active: bool = Field(default=True, example=True)
+    
+class AssignProfileResponse(AssignProfile):
+    pass
+
+class ProfileCommandRequest(BaseModel):
+    command_ids: list[int]
+    profile_id: int
+
+class ProfileCommandResponse(ProfileCommandRequest):
+    message: str
+    status: int

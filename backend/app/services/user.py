@@ -7,6 +7,7 @@ import string
 from random import choice
 
 from app.core.security import get_password_hash, verify_password, create_access_token
+from app.services.mail_service import MailService
 from app.core.config import settings
 from app.models.user import User, UserRole, Role
 from app.schemas.user import UserCreate, UserPasswordUpdate, UserResponse
@@ -172,7 +173,15 @@ def reset_password(db: Session, email: str) -> str:
     new_password = generate_random_password()
     user.hashed_password = get_password_hash(new_password)
     
+    mail_service = MailService()
+    email_result = mail_service.send_reset_password_email(email, new_password)
+    if email_result.startswith("Failed"):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=email_result
+        )
     try:
+        db.flush()
         db.commit()
         return new_password
     except Exception as e:

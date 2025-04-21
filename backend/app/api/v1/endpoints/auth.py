@@ -46,8 +46,7 @@ def reset_user_password(
     try:
         new_password = reset_password(db, email=reset_data.email)
         return {
-            "message": "Đặt lại mật khẩu thành công",
-            "temp_password": new_password,
+            "message": "Đặt lại mật khẩu thành công, vui lòng kiểm tra email !!!",
             "email": reset_data.email
         }
     except HTTPException as e:
