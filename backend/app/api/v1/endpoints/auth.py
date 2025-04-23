@@ -96,6 +96,8 @@ def create_user(
 @router.get("/roles", status_code=status.HTTP_200_OK)
 def admin_get_roles(  
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin)) -> List[str]:
+    current_user: User = Depends(get_current_admin)
+) -> List[str]:
     roles = get_roles(db)
     return roles
+

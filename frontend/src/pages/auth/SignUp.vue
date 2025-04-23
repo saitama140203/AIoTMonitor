@@ -35,14 +35,15 @@ const onSubmit = form.handleSubmit(async (values) => {
   <form class="rounded-lg border bg-card text-card-foreground shadow-sm mx-auto max-w-sm sm:min-w-[25rem] h-max" @submit.prevent="onSubmit">
     <CardHeader>
       <CardTitle class="text-2xl text-center">
-        Sign Up
+        Đăng ký
       </CardTitle>
       <CardDescription class="text-center">
-        Enter your information to create an account
+        Nhập thông tin bên dưới để tạo tài khoản
       </CardDescription>
     </CardHeader>
     <CardContent>
       <div class="grid gap-4">
+        <InputValidator id="name" label="Họ và tên" placeholder="Athony Huynh" type="text" name="name" />
         <InputValidator
           id="email"
           type="email"
@@ -51,17 +52,17 @@ const onSubmit = form.handleSubmit(async (values) => {
           required
           name="email"
         />
-        <InputValidator id="password" label="Password" placeholder="Password" type="password" name="password" />
-        <InputValidator id="confirmPassword" label="Confirm password" placeholder="Confirm Password" type="password" name="confirmPassword" />
+        <InputValidator id="password" label="Mật khẩu" placeholder="Mật khẩu" type="password" name="password" />
+        <InputValidator id="confirmPassword" label="Xác nhận mật khẩu" placeholder="Nhập lại mật khẩu" type="password" name="confirmPassword" />
 
         <Button type="submit" class="w-full">
-          Create an account
+          Đăng ký
         </Button>
       </div>
       <div class="mt-4 text-center text-sm">
-        Already have an account?
+        Bạn đã có tài khoản?
         <RouterLink to="/auth/login" class="ml-1 text-balance underline">
-          Login
+          Đăng nhập ngay
         </RouterLink>
       </div>
     </CardContent>

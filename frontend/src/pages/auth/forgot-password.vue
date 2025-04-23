@@ -12,6 +12,7 @@ import { toast } from '@/components/ui/toast'
 import { useAuthStore } from '@/stores/auth'
 import { emailValidator } from '@/utils/validation'
 import { toTypedSchema } from '@vee-validate/zod'
+import { useAsyncState } from '@vueuse/core'
 import { useForm } from 'vee-validate'
 
 const router = useRouter()
@@ -22,11 +23,19 @@ const form = useForm({
   validationSchema: toTypedSchema(emailValidator),
 })
 
+const { isLoading, execute, error } = useAsyncState(authStore.sendEmailResetPassword, null, {
+  immediate: false,
+  onError: (error) => {
+    Promise.reject(error)
+  },
+})
+
 const onSubmit = form.handleSubmit(async (values) => {
-  await authStore.sendEmailResetPassword(values)
+  await execute(0, values)
+  if(error.value) return
   toast({
-    title: 'Success',
-    description: 'Email sent successfully, check your inbox',
+    title: 'Thành công',
+    description: 'Đã gửi email đặt lại mật khẩu, vui lòng kiểm tra email của bạn',
   })
   router.push('/auth/reset-password')
 })
@@ -37,24 +46,27 @@ const onSubmit = form.handleSubmit(async (values) => {
     <Card class="mx-auto max-w-sm">
       <CardHeader>
         <CardTitle class="text-2xl text-center">
-          Reset Password
+          Quên mật khẩu
         </CardTitle>
         <CardDescription class="text-center">
-          Enter your email below to reset your password
+          Nhập email của bạn để nhận liên kết đặt lại mật khẩu
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div class="grid gap-4">
           <div class="grid gap-2">
-            <InputValidator id="email" type="email" label="Email" placeholder="m@gmai.com" name="email" />
+            <InputValidator id="email" type="email" label="Email" placeholder="example@gmai.com" name="email" />
           </div>
-          <Button type="submit">
-            Send Email
+          <Button
+            type="submit"
+            :is-loading="isLoading"
+          >
+            Gửi email
           </Button>
         </div>
         <div class="mt-4 text-center text-sm">
           <RouterLink to="/auth/login" class="underline">
-            Back to login
+            Quay lại trang đăng nhập
           </RouterLink>
         </div>
       </CardContent>

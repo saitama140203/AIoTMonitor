@@ -34,6 +34,8 @@ export const useThemeStore = defineStore('themeStore', () => {
     }
     document.body.classList.add(newTheme)
     document.body.classList.add(newColor)
+  },{
+    immediate: true,
   })
 
   return {

@@ -11,6 +11,36 @@ from app.core.config import settings
 from app.models.user import User, UserRole, Role
 from app.schemas.user import UserCreate, UserPasswordUpdate, UserResponse
 
+
+from sqlalchemy.orm import Session
+from typing import List, Optional
+from app.models.user import User, UserRole
+
+
+def get_users(
+        db: Session,
+        role: Optional[str] = None,
+        skip: int = 0,
+        limit: Optional[int] = None
+) -> List[User]:
+    query = db.query(User)
+
+    if role:
+        try:
+            role_enum = UserRole[role.upper()]
+            query = query.filter(User.role == role_enum)
+        except KeyError:
+            return []
+
+    if skip:
+        query = query.offset(skip)
+
+    if limit:
+        query = query.limit(limit)
+
+    return query.all()
+
+
 def get_user_by_username(db: Session, username: str) -> Optional[User]:
     return db.query(User).filter(User.username == username).first()
 
@@ -66,7 +96,7 @@ def create_user_with_roles(db: Session, user_in: UserCreate) -> User:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Tên đăng nhập đã tồn tại trong hệ thống",
         )
-    
+        
     if get_user_by_email(db, user_in.email):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -85,10 +115,11 @@ def create_user_with_roles(db: Session, user_in: UserCreate) -> User:
             roles.append(role)   
 
     hashed_password = get_password_hash(user_in.password)
+    
     db_user = User(
-        username=user_in.username,
-        email=user_in.email,
-        full_name=user_in.full_name,
+        username=user_create.username,
+        email=user_create.email,
+        full_name=user_create.full_name,
         hashed_password=hashed_password,
         is_active=True
     )
@@ -123,6 +154,10 @@ def create_user_with_roles(db: Session, user_in: UserCreate) -> User:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Lỗi khi tạo người dùng: {str(e)}"
         )
+        role=user_create.role,
+        is_active=True,
+    )
+   
 
 def update_password(db: Session, user_id: int, password_update: UserPasswordUpdate) -> User:
     user = get_user_by_id(db, user_id)

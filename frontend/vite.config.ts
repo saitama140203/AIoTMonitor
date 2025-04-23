@@ -9,6 +9,7 @@ import Components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
 import Pages from 'vite-plugin-pages'
 import Layouts from 'vite-plugin-vue-layouts'
+import svgLoader from 'vite-svg-loader'
 // https://vite.dev/config/
 export default defineConfig({
   css: {
@@ -29,6 +30,7 @@ export default defineConfig({
     Components({ dts: true }),
     Pages(),
     Layouts(),
+    svgLoader(),
   ],
   resolve: {
     alias: {

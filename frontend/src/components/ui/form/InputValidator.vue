@@ -39,7 +39,7 @@ const typeInputComputed = computed(() => {
           />
           <div
             v-if="props.type === 'password'"
-            class="w-10 h-10 absolute right-0 top-0 cursor-pointer flex items-center justify-center"
+            class="w-10 h-10 absolute right-0 -top-2 cursor-pointer flex items-center justify-center"
             @click="toggleShowIcon"
           >
             <Icon v-if="!isShowPassword" name="IconEyeOff" class="w-6 h-6" />

@@ -3,16 +3,14 @@ import axios from 'axios'
 const BASE_URL = import.meta.env.VITE_API_URL
 
 const axiosInstance = axios.create({
-  baseURL: BASE_URL,
+  baseURL: `${BASE_URL}/api/v1`,
 })
 
 /*  Read more:
 *   https://github.com/axios/axios?tab=readme-ov-file#interceptors
 */
 axiosInstance.interceptors.request.use((config) => {
-  config.headers['Content-Type'] = 'application/json'
-  config.headers['Access-Control-Allow-Origin'] = '*'
-  const accessToken = localStorage.getItem('accesstoken')
+  const accessToken = localStorage.getItem('aiot_accesstoken')
   if (accessToken)
     config.headers.Authorization = `Bearer ${accessToken}`
   return config
@@ -25,14 +23,16 @@ axiosInstance.interceptors.response.use(
 
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
-      const refreshToken = localStorage.getItem('refreshtoken')
+      const refreshToken = localStorage.getItem('Slooh_RefreshToken')
 
       if (refreshToken) {
         try {
-          const response = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken })
-          const { accessToken } = response.data
+          const response = await axios.post(`${BASE_URL}/v1/auth/refresh-tokens`, { refreshToken })
+          const accessToken = response.data.access.token
+          const currentRefreshToken = response.data.refresh.token
 
-          localStorage.setItem('accesstoken', accessToken)
+          localStorage.setItem('aiot_accesstoken', accessToken)
+          localStorage.setItem('Slooh_RefreshToken', currentRefreshToken)
           axiosInstance.defaults.headers.Authorization = `Bearer ${accessToken}`
           originalRequest.headers.Authorization = `Bearer ${accessToken}`
 
@@ -40,8 +40,8 @@ axiosInstance.interceptors.response.use(
           return axiosInstance(originalRequest)
         }
         catch (refreshError) {
-          localStorage.removeItem('accesstoken')
-          localStorage.removeItem('refreshtoken')
+          localStorage.removeItem('aiot_accesstoken')
+          localStorage.removeItem('Slooh_RefreshToken')
           window.location.href = '/auth/login'
           return Promise.reject(refreshError)
         }

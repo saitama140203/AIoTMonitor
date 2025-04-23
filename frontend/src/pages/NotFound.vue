@@ -2,7 +2,7 @@
     {
         meta: {
             title: '404 Not Found',
-            layout: 'error'
+            layout: 'empty'
         }
     }
 </route>

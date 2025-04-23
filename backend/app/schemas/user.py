@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, validator, Field
 from typing import Optional, List
 from datetime import datetime
+from app.models.user import UserRole
 
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
