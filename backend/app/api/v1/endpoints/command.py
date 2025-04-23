@@ -22,4 +22,7 @@ def create_command_profiles_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_team_lead)
 ):
-    return create_command_profiles(db, data, current_user)
+    return {
+        "message": "Add list command profiles successfully",
+        "data" : create_command_profiles(db, data, current_user)
+    }

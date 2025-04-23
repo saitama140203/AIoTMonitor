@@ -45,7 +45,7 @@ class UserPasswordUpdate(BaseModel):
         return v
 
 class UserPasswordReset(BaseModel):
-    email: EmailStr
+    user_name: str = Field(..., min_length=3, max_length=50)
 
 class UserLogin(BaseModel):
     username: str

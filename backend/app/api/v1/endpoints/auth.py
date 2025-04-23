@@ -38,16 +38,16 @@ def login_access_token(
 def reset_user_password(
     reset_data: UserPasswordReset,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin)
 ) -> Dict[str, Any]:
     """
     Admin reset mật khẩu người dùng khác
     """
     try:
-        new_password = reset_password(db, email=reset_data.email)
+        new_password = reset_password(db, user_name=reset_data.user_name)
         return {
-            "message": "Đặt lại mật khẩu thành công, vui lòng kiểm tra email !!!",
-            "email": reset_data.email
+            "message": "Đặt lại mật khẩu thành công !!!",
+            "user": reset_data.user_name,
+            "new_password": new_password  
         }
     except HTTPException as e:
         raise e

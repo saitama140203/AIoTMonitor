@@ -14,7 +14,8 @@ from app.schemas.device import (
     AddDevicesToGroupRequest,
     DeviceResponse,
     GroupCreate,
-    GroupResponse
+    GroupResponse,
+    DeviceBase
 )
 
 def create_device(
