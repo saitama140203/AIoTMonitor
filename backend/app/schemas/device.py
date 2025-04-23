@@ -3,6 +3,7 @@ from typing import Optional, List
 from datetime import datetime
 
 class DeviceBase(BaseModel):
+    id: int
     name: str
     mac: Optional[str] = None
     ip: str

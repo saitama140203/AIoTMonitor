@@ -47,15 +47,15 @@ def add_devices_to_group(
     
     return {"message": f"Added {len(device_ids)} devices to group successfully"}
 
-@router.post("/profiles/{profile_id}/assign-to-operator/{operator_id}")
-def assign_profile_to_operator(
-    profile_id: int,
-    operator_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    service = ProfileService(db)
-    result = service.assign_profile_to_operator(profile_id, operator_id, current_user.id)
-    return result
+# @router.post("/profiles/{profile_id}/assign-to-operator/{operator_id}")
+# def assign_profile_to_operator(
+#     profile_id: int,
+#     operator_id: int,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_user)
+# ):
+#     service = ProfileService(db)
+#     result = service.assign_profile_to_operator(profile_id, operator_id, current_user.id)
+#     return result
 
 

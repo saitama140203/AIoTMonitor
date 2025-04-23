@@ -161,18 +161,19 @@ def generate_random_password(length: int = 12) -> str:
     characters = string.ascii_letters + string.digits + "!@#$%^&*"
     return ''.join(secrets.choice(characters) for _ in range(length))
 
-def reset_password(db: Session, email: str) -> str:
-    user = get_user_by_email(db, email)
+def reset_password(db: Session, user_name: str) -> str:
+    user = get_user_by_username(db, user_name)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Không tìm thấy người dùng với email này",
+            detail="Không tìm thấy người dùng với user này",
         )
     
-    new_password = generate_random_password()
+    new_password = "abc123@@"
     user.hashed_password = get_password_hash(new_password)
     
     try:
+        db.flush()
         db.commit()
         return new_password
     except Exception as e:

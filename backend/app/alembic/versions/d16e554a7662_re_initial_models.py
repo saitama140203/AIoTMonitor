@@ -72,8 +72,8 @@ def upgrade() -> None:
 
     op.create_table('devices',
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('name', sa.String(length=100), nullable=True, unique=True),
-        sa.Column('mac', sa.String(length=50), nullable=True),
+        sa.Column('name', sa.String(length=100), nullable=True),
+        sa.Column('mac', sa.String(length=50), nullable=True, unique=True),
         sa.Column('ip', sa.String(length=50), nullable=True),
         sa.Column('status', sa.String(length=20), nullable=True),
         sa.Column('platform', sa.String(length=100), nullable=True),

@@ -87,3 +87,25 @@ def get_current_operator(user: User = Depends(role_required(["operator"]))):
 
 def allow_roles(roles: List[str]):
     return Depends(role_required(roles))
+
+def get_all_operators(
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+) -> List[User]:
+    try:
+        if not any(role.role.name in ["admin", "team_lead"] for role in current_user.roles):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Require Admin or Team Lead"
+            )
+        
+        operators = db.query(User).filter(User.is_active == True).all()
+        return operators
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching operators: {str(e)}"
+        )

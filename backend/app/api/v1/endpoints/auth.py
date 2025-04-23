@@ -37,18 +37,18 @@ def login_access_token(
 @router.put("/reset-password", status_code=status.HTTP_200_OK)
 def reset_user_password(
     reset_data: UserPasswordReset,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin)
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
     Admin reset mật khẩu người dùng khác
     """
     try:
-        new_password = reset_password(db, email=reset_data.email)
+        new_password = reset_password(db, user_name=reset_data.user_name)
         return {
-            "message": "Đặt lại mật khẩu thành công",
-            "temp_password": new_password,
-            "email": reset_data.email
+            "message": "Đặt lại mật khẩu thành công !!!",
+            "user": reset_data.user_name,
+            "new_password": new_password  
         }
     except HTTPException as e:
         raise e
@@ -62,11 +62,9 @@ def reset_user_password(
 def update_user_password(
     password_update: UserPasswordUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_admin)
 ) -> Any:
-    """
-    Cập nhật mật khẩu cho user hiện tại
-    """
+
     try:
         user = update_password(db, current_user.id, password_update)
         return {"message": "Cập nhật mật khẩu thành công"}
