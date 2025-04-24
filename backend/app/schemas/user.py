@@ -18,17 +18,23 @@ class UserCreate(UserBase):
             if role.lower() not in valid_roles:
                 raise ValueError(f"Invalid role: {role}")
         return [role.lower() for role in v]
+class RoleResponse(BaseModel):
+    id: int
+    name: str
+    
+
+    class Config:
+        from_attributes = True
 
 class UserResponse(UserBase):
     id: int
     is_active: bool
-    roles: List[str]
+    roles: List[RoleResponse]
     created_at: datetime
     updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
-
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     full_name: Optional[str] = Field(None, max_length=100)
@@ -64,9 +70,13 @@ class TokenPayload(BaseModel):
 class UserInDB(UserBase):
     id: int
     is_active: bool
-    roles: List[str]
+    email: str
+    full_name: str | None = None
+    roles: Optional[List[str]] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True
+class User(UserInDB):
+    pass

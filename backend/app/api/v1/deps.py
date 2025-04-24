@@ -82,7 +82,7 @@ def get_current_team_lead(user: User = Depends(role_required(["team_lead"]))):
 def get_current_active_admin(
     current_user: User = Depends(get_current_user),
 ) -> User:
-    if current_user.role != UserRole.ADMIN:
+    if current_user.roles != UserRole.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Bạn không có quyền truy cập chức năng này",
@@ -92,17 +92,14 @@ def get_current_active_admin(
 def get_current_active_admin_or_teamlead(
     current_user: User = Depends(get_current_user),
 ) -> User:
-    if current_user.role != UserRole.ADMIN and current_user.role != UserRole.TEAM_LEAD:
+    if not any(role.role.name in ["team_lead", "admin"] for role in current_user.roles):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Bạn không có quyền truy cập chức năng này",
-        )
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Yêu cầu quyền Team Lead"
+            )
     return current_user
 def get_current_supervisor(user: User = Depends(role_required(["supervisor"]))):
     return user
 
 def get_current_operator(user: User = Depends(role_required(["operator"]))):
     return user
-
-def allow_roles(roles: List[str]):
-    return Depends(role_required(roles))

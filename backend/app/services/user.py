@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict, Any
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, status
 from datetime import timedelta
 import secrets
@@ -9,7 +9,48 @@ from random import choice
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.core.config import settings
 from app.models.user import User, UserRole, Role
-from app.schemas.user import UserCreate, UserPasswordUpdate, UserResponse
+from app.schemas.user import UserCreate, UserPasswordUpdate, UserResponse, RoleResponse
+
+
+from sqlalchemy.orm import Session
+from typing import List, Optional
+
+
+
+def get_users(
+    db: Session,
+    skip: int = 0,
+    limit: int = 10,
+    current_user: User = None
+) -> List[UserResponse]:
+    results = (
+        db.query(User, Role)
+        .join(UserRole, User.id == UserRole.user_id)
+        .join(Role, Role.id == UserRole.role_id)
+        .all()
+    )
+
+    users_dict = {}
+
+    for user, role in results:
+        if user.id not in users_dict:
+            users_dict[user.id] = UserResponse(
+                id=user.id,
+                username=user.username,
+                email=user.email,
+                full_name=user.full_name,
+                is_active=user.is_active,
+                created_at=user.created_at,
+                updated_at=user.updated_at,
+                roles=[]
+            )
+
+        role_obj = RoleResponse(id=role.id, name=role.name)
+        if role_obj not in users_dict[user.id].roles:
+            users_dict[user.id].roles.append(role_obj)
+
+    users_list = list(users_dict.values())
+    return users_list[skip:skip + limit]
 
 def get_user_by_username(db: Session, username: str) -> Optional[User]:
     return db.query(User).filter(User.username == username).first()
@@ -66,7 +107,7 @@ def create_user_with_roles(db: Session, user_in: UserCreate) -> User:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Tên đăng nhập đã tồn tại trong hệ thống",
         )
-    
+        
     if get_user_by_email(db, user_in.email):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -85,10 +126,11 @@ def create_user_with_roles(db: Session, user_in: UserCreate) -> User:
             roles.append(role)   
 
     hashed_password = get_password_hash(user_in.password)
+    
     db_user = User(
-        username=user_create.username,
-        email=user_create.email,
-        full_name=user_create.full_name,
+        username=user_in.username,
+        email=user_in.email,
+        full_name=user_in.full_name,
         hashed_password=hashed_password,
         is_active=True
     )
@@ -123,6 +165,7 @@ def create_user_with_roles(db: Session, user_in: UserCreate) -> User:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Lỗi khi tạo người dùng: {str(e)}"
         )
+
 
 def update_password(db: Session, user_id: int, password_update: UserPasswordUpdate) -> User:
     user = get_user_by_id(db, user_id)
@@ -161,18 +204,19 @@ def generate_random_password(length: int = 12) -> str:
     characters = string.ascii_letters + string.digits + "!@#$%^&*"
     return ''.join(secrets.choice(characters) for _ in range(length))
 
-def reset_password(db: Session, email: str) -> str:
-    user = get_user_by_email(db, email)
+def reset_password(db: Session, user_name: str) -> str:
+    user = get_user_by_username(db, user_name)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Không tìm thấy người dùng với email này",
+            detail="Không tìm thấy người dùng với user này",
         )
     
-    new_password = generate_random_password()
+    new_password = "abc123@@"
     user.hashed_password = get_password_hash(new_password)
     
     try:
+        db.flush()
         db.commit()
         return new_password
     except Exception as e:
