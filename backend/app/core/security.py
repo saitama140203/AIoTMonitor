@@ -13,6 +13,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def create_access_token(
     subject: Union[str, Any], 
     roles: List[str], 
+    username: str,
     expires_delta: Optional[timedelta] = None
 ) -> str:
     if expires_delta:
@@ -25,6 +26,7 @@ def create_access_token(
     to_encode = {
         "exp": expire,
         "sub": str(subject),
+        "username": username,
         "roles": roles
     }
     encoded_jwt = jwt.encode(

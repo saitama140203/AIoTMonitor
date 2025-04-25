@@ -29,7 +29,7 @@ class RoleResponse(BaseModel):
 class UserResponse(UserBase):
     id: int
     is_active: bool
-    roles: List[RoleResponse]
+    roles: List[str]
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -51,7 +51,7 @@ class UserPasswordUpdate(BaseModel):
         return v
 
 class UserPasswordReset(BaseModel):
-    email: EmailStr
+    username: str
 
 class UserLogin(BaseModel):
     username: str
@@ -60,6 +60,7 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    username: str
     roles: List[str] = []
 
 class TokenPayload(BaseModel):
