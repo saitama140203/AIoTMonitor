@@ -28,9 +28,8 @@ def create_device(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Yêu cầu quyền Team Lead"
             )
-
     try:
-        existing_device = db.query(Device).filter(Device.mac == device_data.mac).first()
+        existing_device = db.query(Device).filter(Device.username == device_data.username).first()
         if existing_device:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -45,13 +44,14 @@ def create_device(
         )
         db.add(db_device)
         db.commit()
-        db.refresh(db_device)
+        db.refresh(db_device)        
         return device_data
-
     except HTTPException as e:
-        raise e
-    except Exception as e:
-        db.rollback()
+        raise HTTPException(
+        db.rollback()        
+    )
+
+
 
 
 def get_devices(
@@ -59,7 +59,7 @@ def get_devices(
     current_user: User,
     group_id: Optional[int] = None,
     status_filter: Optional[str] = None,
-    mac: Optional[str] = None
+    username: Optional[str] = None
 ) -> List[Device]:
     """
     Lấy danh sách thiết bị (Team Lead/Operator)
@@ -94,8 +94,8 @@ def get_devices(
         if status_filter:
             query = query.filter(Device.status == status_filter)
 
-        if mac:
-            query = query.filter(Device.mac == mac)    
+        if username:
+            query = query.filter(Device.username == username)    
             
         return query.all()
     

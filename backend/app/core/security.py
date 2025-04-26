@@ -14,6 +14,7 @@ def create_access_token(
     subject: Union[str, Any], 
     roles: List[str], 
     username: str,
+    full_name: str,
     expires_delta: Optional[timedelta] = None
 ) -> str:
     if expires_delta:
@@ -27,6 +28,7 @@ def create_access_token(
         "exp": expire,
         "sub": str(subject),
         "username": username,
+        "full_name": full_name,
         "roles": roles
     }
     encoded_jwt = jwt.encode(

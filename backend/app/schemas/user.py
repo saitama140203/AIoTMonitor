@@ -61,6 +61,7 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     username: str
+    full_name: Optional[str] = None
     roles: List[str] = []
 
 class TokenPayload(BaseModel):

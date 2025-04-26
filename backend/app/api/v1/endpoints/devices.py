@@ -34,7 +34,7 @@ def list_devices(
     current_user: User = Depends(get_current_user),
     group_id: Optional[int] = None,
     status: Optional[str] = None,
-    mac: Optional[str] = None,
+    username: Optional[str] = None,
 
 ):
     return get_devices(db, current_user, group_id, status)

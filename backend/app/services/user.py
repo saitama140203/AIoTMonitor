@@ -91,6 +91,7 @@ def login(db: Session, username: str, password: str) -> Dict[str, Any]:
         subject=user.id,
         expires_delta=access_token_expires,
         username=user.username,
+        full_name=user.full_name,
         roles=user_roles
     )
     
@@ -99,6 +100,7 @@ def login(db: Session, username: str, password: str) -> Dict[str, Any]:
         "token_type": "bearer",
         "user_id": user.id,
         "username": user.username,
+        "full_name": user.full_name,
         "roles": user_roles,
     }
 

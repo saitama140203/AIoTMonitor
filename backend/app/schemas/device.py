@@ -4,30 +4,33 @@ from datetime import datetime
 
 class DeviceBase(BaseModel):
     name: str
-    mac: Optional[str] = None
+    username: Optional[str] = None
     ip: str
     platform: str
     group_id: int
 
 class DeviceCreate(BaseModel):
     name: str
-    mac: Optional[str] = None
+    username: Optional[str] = None
     ip: str
+    port: int
     platform: str
+    class Config:
+        from_attributes = True
 
 class DeviceUpdate(BaseModel):
     name: str
-    mac: Optional[str] = None
+    username: Optional[str] = None
     ip: str
     platform: str
     status: str
 
 class DeviceResponse(BaseModel):
     name: str
-    mac: Optional[str] = None
+    username: Optional[str] = None
     ip: str
-    platform: str
-        
+    port: int
+    platform: str    
     class Config:
         from_attributes = True
 
