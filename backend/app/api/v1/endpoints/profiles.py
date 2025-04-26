@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
-from app.schemas.profile import ProfileCreate, ProfileResponse
-from app.services.profile_sevice import create_profile
-from app.api.v1.deps import get_db, get_current_team_lead
+from app.schemas.profile import ProfileCreate, ProfileResponse, AssignProfile
+from app.services.profile_sevice import create_profile, assign_profile, get_all_profiles
+from app.api.v1.deps import get_db, get_current_team_lead, get_current_user
 from app.models.user import User
 
 router = APIRouter()
@@ -17,3 +17,25 @@ def create_new_profile(
     current_user: User = Depends(get_current_team_lead)
 ):
     return create_profile(db, profile_data, current_user)
+
+@router.post("/assign_profile")
+def assign_profile_operator(
+    assign_profile_data: AssignProfile,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_team_lead)
+):
+    return {
+        "message": "Profile assigned successfully",
+        "code": status.HTTP_201_CREATED,
+        "assigned_profile": assign_profile(db, assign_profile_data, current_user)
+        }
+
+@router.get("/get_all_profiles"
+)
+def get_all_profiles_endpoints(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, gt=0),
+):
+    return get_all_profiles(db, current_user, skip, limit)

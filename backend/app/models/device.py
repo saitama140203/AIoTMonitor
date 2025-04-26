@@ -11,6 +11,7 @@ class Device(Base):
     username = Column(String(50))
     ip = Column(String(50))
     port = Column(Integer)
+    hashed_password = Column(String(20))
     status = Column(String(20))  # Ví dụ: 'active', 'inactive', 'maintenance'
     platform = Column(String(100))
     lastseen = Column(DateTime)

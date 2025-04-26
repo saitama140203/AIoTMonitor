@@ -1,7 +1,7 @@
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 from app.models.user import User
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from app.services.device_service import (
     create_device,
     get_devices,
@@ -28,14 +28,15 @@ def create_new_device(
 ):
     return create_device(db, device_data, current_user)
 
-@router.get("/devices/get_devices", response_model=List[DeviceResponse])
+@router.get("/devices/get_devices")
 def list_devices(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     group_id: Optional[int] = None,
     status: Optional[str] = None,
     username: Optional[str] = None,
-
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, gt=0),
 ):
     return get_devices(db, current_user, group_id, status)
 
