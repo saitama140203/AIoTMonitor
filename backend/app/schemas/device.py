@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, IPvAnyAddress
 from typing import Optional, List
 from datetime import datetime
 
@@ -10,11 +10,12 @@ class DeviceBase(BaseModel):
     group_id: int
 
 class DeviceCreate(BaseModel):
-    name: str
-    username: Optional[str] = None
-    ip: str
-    port: int
-    platform: str
+    name: str = Field(..., min_length=1, max_length=100)
+    username: Optional[str] = Field(None, min_length=1, max_length=50)
+    ip: IPvAnyAddress
+    port: int = Field(..., ge=1, le=65535)
+    platform: str = Field(..., min_length=1, max_length=50)
+
     class Config:
         from_attributes = True
 

@@ -1,8 +1,13 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import List
 class CommandCreate(BaseModel):
-    commands_text: str
-    description: str
+    commands_text: str = Field(..., min_length=1, max_length=500)
+    description: str = Field(..., min_length=1, max_length=255)
+    @validator('commands_text', 'description')
+    def must_not_be_blank(cls, v, field):
+        if not v.strip():
+            raise ValueError(f'{field.name} must not be blank')
+        return v
 
 class CommandResponse(CommandCreate):
     pass
