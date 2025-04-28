@@ -89,8 +89,10 @@ def login(db: Session, username: str, password: str) -> Dict[str, Any]:
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         subject=user.id,
-        roles=user_roles,
-        expires_delta=access_token_expires
+        expires_delta=access_token_expires,
+        username=user.username,
+        full_name=user.full_name,
+        roles=user_roles
     )
     
     return {
@@ -98,6 +100,7 @@ def login(db: Session, username: str, password: str) -> Dict[str, Any]:
         "token_type": "bearer",
         "user_id": user.id,
         "username": user.username,
+        "full_name": user.full_name,
         "roles": user_roles,
     }
 
@@ -210,6 +213,17 @@ def reset_password(db: Session, user_name: str) -> str:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Không tìm thấy người dùng với user này",
+        )
+
+    admin_role = db.query(Role).join(UserRole).filter(
+        UserRole.user_id == user.id,
+        Role.name == "admin"
+    ).first()
+
+    if not admin_role:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Không thể đặt lại mật khẩu cho người dùng này",
         )
     
     new_password = "abc123@@"

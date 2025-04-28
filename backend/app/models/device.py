@@ -8,8 +8,10 @@ class Device(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(100))
-    mac = Column(String(50))
+    username = Column(String(50))
     ip = Column(String(50))
+    port = Column(Integer)
+    hashed_password = Column(String(20))
     status = Column(String(20))  # Ví dụ: 'active', 'inactive', 'maintenance'
     platform = Column(String(100))
     lastseen = Column(DateTime)

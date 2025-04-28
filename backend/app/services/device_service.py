@@ -4,9 +4,9 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from datetime import datetime
 from app.models.device import Device, Group
-from app.models.command import Command, CommandProfile
-from app.models.profile import Profile, ProfileUser
+from app.models.profile import ProfileUser, Profile
 from app.models.user import User
+from app.core.security import get_password_hash
 
 
 from app.schemas.device import (
@@ -28,16 +28,30 @@ def create_device(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Yêu cầu quyền Team Lead"
             )
-
     try:
-        existing_device = db.query(Device).filter(Device.mac == device_data.mac).first()
+        existing_device = db.query(Device).filter(Device.username == device_data.username).first()
         if existing_device:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Đã tồn tại thiết bị trong hệ thống !!!"
+                detail="Username Đã tồn tại thiết bị trong hệ thống !!!"
             )
+        ip_address = str(device_data.ip)
+        existing_device = db.query(Device).filter(Device.ip == ip_address).first()
+        if existing_device:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="IP Đã tồn tại thiết bị trong hệ thống !!!"
+            )
+        
+        password_hash = get_password_hash(device_data.password)
+
         db_device = Device(
-            **device_data.dict(),
+            name=device_data.name,
+            username=device_data.username,
+            ip=ip_address,
+            port=device_data.port,
+            hashed_password=password_hash,
+            platform=device_data.platform,
             created_by=current_user.id,
             lastseen=datetime.now(),
             status="active",
@@ -45,25 +59,28 @@ def create_device(
         )
         db.add(db_device)
         db.commit()
-        db.refresh(db_device)
-        return device_data
-
+        db.refresh(db_device)        
+        return DeviceResponse.model_validate(device_data)
+    
     except HTTPException as e:
+        db.rollback()
         raise e
     except Exception as e:
         db.rollback()
-
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi tạo thiết bị: {str(e)}"
+        )
 
 def get_devices(
     db: Session,
     current_user: User,
     group_id: Optional[int] = None,
     status_filter: Optional[str] = None,
-    mac: Optional[str] = None
-) -> List[Device]:
-    """
-    Lấy danh sách thiết bị (Team Lead/Operator)
-    """
+    username: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 10,
+):
     try:
         query = db.query(Device)
         
@@ -75,18 +92,18 @@ def get_devices(
         elif "team_lead" in user_roles:
             query = query.filter(Device.created_by == current_user.id)
 
-        # elif "operator" in user_roles:
-        #     assigned_profiles = db.query(ProfileUser.profile_id).filter(
-        #         ProfileUser.operator_id == current_user.id
-        #     ).subquery()
+        elif "operator" in user_roles:
+            assigned_profiles = db.query(ProfileUser.profile_id).filter(
+                ProfileUser.operator_id == current_user.id
+            ).subquery()
 
-        #     # Lấy tất cả group từ các profile được gán
-        #     assigned_groups = db.query(GroupProfile.group_id).filter(
-        #         GroupProfile.profile_id.in_(assigned_profiles)
-        #     ).distinct().subquery()
+            # Lấy tất cả group từ các profile được gán
+            assigned_groups = db.query(Profile.group_id).filter(
+                Profile.id.in_(assigned_profiles)
+            ).distinct().subquery()
 
-        #     # Lọc device thuộc các group được phép truy cập
-        #     query = query.filter(Device.group_id.in_(assigned_groups))
+            # Lọc device thuộc các group được phép truy cập
+            query = query.filter(Device.group_id.in_(assigned_groups))
         
         if group_id:
             query = query.filter(Device.group_id == group_id)
@@ -94,10 +111,19 @@ def get_devices(
         if status_filter:
             query = query.filter(Device.status == status_filter)
 
-        if mac:
-            query = query.filter(Device.mac == mac)    
-            
-        return query.all()
+        if username:
+            query = query.filter(Device.username == username)    
+
+        total = query.count()    
+        query = query.offset(skip).limit(limit).all()
+        return {
+            "message": "Lấy danh sách thiết bị thành công",
+            "code": status.HTTP_200_OK,
+            "data": query,
+            "total": total,
+            "skip": skip,
+            "limit": limit
+        }
     
     except Exception as e:
         raise HTTPException(

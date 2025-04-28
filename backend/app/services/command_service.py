@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.models.profile import Profile
 from app.models.command import Command, CommandProfile
-from app.schemas.command import CommandCreate, CommandResponse, CreateCommandList
+from app.schemas.command import CommandCreate, CommandResponse, CreateCommandList, CommandProfileSchema
 from app.models.user import User
 
 def create_command(
@@ -50,7 +50,7 @@ def create_command_profiles(
     db: Session,
     data: CreateCommandList,
     current_user: User
-) -> List[CommandProfile]:
+) -> Dict[str, Any]:
     try:
         if not any(role.role.name == ("team_lead") for role in current_user.roles):
             raise HTTPException(
@@ -76,26 +76,34 @@ def create_command_profiles(
                 detail=f"Command IDs not found: {list(missing_ids)}"
             )
 
-        # Kiểm tra xem đã tồn tại command_profile chưa để tránh trùng lặp
         existing_links = db.query(CommandProfile.command_id).filter(
             CommandProfile.profile_id == data.profile_id,
             CommandProfile.command_id.in_(data.command_ids)
         ).all()
-        existing_link_ids = {link.command_id for link in existing_links}
+        if existing_links:              
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Command IDs already linked to this profile"
+            )
 
-        # Lọc ra command_id chưa được gán
-        new_command_ids = set(data.command_ids) - existing_link_ids
-
-        # Tạo mới
         new_links = [
             CommandProfile(command_id=cmd_id, profile_id=data.profile_id)
-            for cmd_id in new_command_ids
+            for cmd_id in data.command_ids
         ]
 
         db.add_all(new_links)
         db.commit()
+        for link in new_links:
+            db.refresh(link)
 
-        return new_links
+        command_profiles_response: List[CommandProfileSchema] = [
+            CommandProfileSchema.from_orm(link) for link in new_links
+        ]
+
+        return {
+            "message": "Command profiles created successfully",
+            "command_profiles": command_profiles_response
+        }
 
     except HTTPException as e:
         db.rollback()
