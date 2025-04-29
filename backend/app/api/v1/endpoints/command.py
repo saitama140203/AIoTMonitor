@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.models.user import User
 from typing import List, Any, Dict
-from app.services.command_service import create_command, create_command_profiles
+from app.services.command_service import create_command, create_command_profiles, get_all_commands
 from app.schemas.command import CommandCreate, CommandResponse, CreateCommandList
 from app.api.v1.deps import get_db, get_current_team_lead, get_current_user
 
@@ -24,3 +24,12 @@ def create_command_profiles_endpoint(
     current_user: User = Depends(get_current_team_lead)
 ):
     return create_command_profiles(db, data, current_user)
+
+@router.get("get_all_commands")
+def get_all_commands_endpoint(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    skip: int = 0,
+    limit: int = 10
+):
+    return get_all_commands(db, current_user, skip, limit)

@@ -8,6 +8,7 @@ from app.services.device_service import (
     # update_device_status,
     create_device_group,
     devices_into_group,
+    get_all_groups
 )
 from app.schemas.device import (
     AddDevicesToGroupRequest,
@@ -55,3 +56,12 @@ def add_devices_to_group(
     current_user: User = Depends(get_current_team_lead)
 ):
     return devices_into_group(db, request_data, current_user)
+
+@router.get("/groups/get_groups")
+def list_groups(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, gt=0),
+):
+    return get_all_groups(db, current_user, skip=skip, limit=limit)

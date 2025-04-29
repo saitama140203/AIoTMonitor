@@ -73,7 +73,7 @@ def upgrade() -> None:
     op.create_table('devices',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('name', sa.String(length=100), nullable=True),
-        sa.Column('username', sa.String(length=50), nullable=True, unique=True),
+        sa.Column('username', sa.String(length=50), nullable=True),
         sa.Column('ip', sa.String(length=50), nullable=True, unique=True),
         sa.Column('port', sa.Integer(), nullable=True),
         sa.Column('hashed_password', sa.String(length=255), nullable=True),

@@ -114,3 +114,32 @@ def create_command_profiles(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error creating command-profile links: {str(e)}"
         )
+    
+def get_all_commands(
+    db: Session,
+    current_user: User,
+    skip: int = 0,
+    limit: int = 10,
+) -> Dict[str, Any]:
+    try:
+        if not any(role.role.name == ("team_lead") for role in current_user.roles):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="team_lead role only !!!"
+            )
+        total = db.query(Command).count()
+        commands = db.query(Command).offset(skip).limit(limit).all()
+        return {
+            "message": "Commands fetched successfully",
+            "commands": commands,
+            "total": total
+        }
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching commands: {str(e)}"
+        )
+    

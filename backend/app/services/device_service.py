@@ -29,18 +29,18 @@ def create_device(
                 detail="Yêu cầu quyền Team Lead"
             )
     try:
-        existing_device = db.query(Device).filter(Device.username == device_data.username).first()
-        if existing_device:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username Đã tồn tại thiết bị trong hệ thống !!!"
-            )
+        # existing_device = db.query(Device).filter(Device.username == device_data.username).first()
+        # if existing_device:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_400_BAD_REQUEST,
+        #         detail="Username Đã tồn tại thiết bị trong hệ thống !!!"
+        #     )
         ip_address = str(device_data.ip)
         existing_device = db.query(Device).filter(Device.ip == ip_address).first()
         if existing_device:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="IP Đã tồn tại thiết bị trong hệ thống !!!"
+                detail="Địa chỉ IP này đã tồn tại thiết bị trong hệ thống !!!"
             )
         
         password_hash = get_password_hash(device_data.password)
@@ -273,3 +273,29 @@ def devices_into_group(
         )
 
 
+def get_all_groups(
+    db: Session,
+    current_user: User,
+    skip: int = 0,
+    limit: int = 10
+) -> Dict[str, Any]:
+    try:
+        if not any(role.role.name == ("team_lead") for role in current_user.roles):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="team_lead role only !!!"
+            )
+        total = db.query(Group).count()
+        groups = db.query(Group).offset(skip).limit(limit).all()
+        return {
+            "message": "Lấy danh sách nhóm thiết bị thành công",
+            "code": status.HTTP_200_OK,
+            "data": groups,
+            "total": total,
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi lấy danh sách nhóm thiết bị: {str(e)}"
+        )

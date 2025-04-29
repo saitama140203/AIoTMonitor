@@ -39,15 +39,12 @@ def reset_user_password(
     reset_data: UserPasswordReset,
     db: Session = Depends(get_db),
 ) -> Dict[str, Any]:
-    """
-    Admin reset mật khẩu người dùng khác
-    """
     try:
         new_password = reset_password(db, user_name=reset_data.username)
         return {
             "message": "Đặt lại mật khẩu thành công",
             "temp_password": new_password,
-            "email": reset_data.username
+            "username": reset_data.username
         }
     except HTTPException as e:
         raise e
@@ -63,9 +60,6 @@ def update_user_password(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    """
-    Cập nhật mật khẩu cho user hiện tại
-    """
     try:
         user = update_password(db, current_user.id, password_update)
         return {"message": "Cập nhật mật khẩu thành công"}
