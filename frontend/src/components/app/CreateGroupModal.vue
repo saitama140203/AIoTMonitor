@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { HoatDongPhong, type Kenh, type Phong, TrangThai } from '@/types'
-
 const { open } = defineProps({
   open: {
     type: Boolean,
@@ -27,17 +25,17 @@ const isCreatable = computed(() => {
   <Dialog :open="open" @update:open="(value:boolean) => emit('update:open', value)">
     <DialogContent class="sm:max-w-[425px] p-4">
       <DialogHeader>
-        <DialogTitle>Tạo phòng mới</DialogTitle>
+        <DialogTitle>Create new Group</DialogTitle>
         <DialogDescription>
-          Nhập tên phòng và nhấn "Tạo" khi bạn sẵn sàng.
+          Enter the name of the group you want to create.
         </DialogDescription>
       </DialogHeader>
       <div class="grid grid-cols-5 items-center gap-4">
-        <Label for="room-name" class="text-left"> Tên phòng </Label>
+        <Label for="room-name" class="text-left">Name</Label>
         <Input
           id="room-name"
           v-model="roomName"
-          placeholder="Nhập tên phòng"
+          placeholder="Enter group name"
           class="col-span-4"
           autocomplete="off"
         />

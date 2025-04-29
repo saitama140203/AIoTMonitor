@@ -61,7 +61,7 @@ async function handleCreateDevice(data: any) {
   <div class="flex flex-col gap-4 p-4 h-[calc(100vh-64px)]">
     <div class="flex justify-end">
       <Button @click="openCreateDeviceModal">
-        Create Device
+        Create Group
       </Button>
     </div>
     <template
@@ -69,8 +69,8 @@ async function handleCreateDevice(data: any) {
     >
       <div class="relative rounded-lg overflow-hidden shadow-md w-full bg-card overflow-y-auto">
         <div class="grid lg:grid-cols-7 grid-cols-5 gap-4 p-4 border-b font-semibold sticky top-0 bg-card z-10">
-          <div >
-            Username
+          <div>
+            Name
           </div>
           <div class="lg:col-span-2">
             Ip address
@@ -98,30 +98,11 @@ async function handleCreateDevice(data: any) {
           </div>
           <div>{{ device.port }}</div>
           <div class="flex justify-between items-center gap-2">
-            <span
-              class="px-2 py-1 rounded text-sm truncate"
-              :class="[device.status === 'active' ? 'bg-success' : 'bg-destructive']"
+            <Button
+              varient="ouline"
             >
-              {{ device.status === 'active' ? 'Active' : 'Inactive' }}
-            </span>
-            <!-- <DropdownMenu v-if="userStore?.user?.roles.includes(UserRole.TEAM_LEAD)">
-              <DropdownMenuTrigger
-                class="cursor-pointer"
-                as-child
-              >
-                <Button variant="outline" class="w-8 h-8 p-0">
-                  <span class="sr-only">Open menu</span>
-                  <MoreHorizontal class="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent class="">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem class="cursor-pointer">
-                  Hehe
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu> -->
+              Detail
+            </Button>
           </div>
         </div>
 
@@ -155,7 +136,7 @@ async function handleCreateDevice(data: any) {
       </div>
     </template>
     <span v-else-if="!isLoading && listDevices.data.length === 0" class="text-center text-muted-foreground">
-      No devices found
+      No groups found
     </span>
   </div>
   <CreateDeviceModal

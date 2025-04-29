@@ -22,7 +22,6 @@ export async function middlewareAuth(to: RouteLocationNormalized, from: RouteLoc
     }
     catch (error) {
       console.error('Error fetching user data:', error)
-      authStore.clearUserData()
     }
   }
   return next()

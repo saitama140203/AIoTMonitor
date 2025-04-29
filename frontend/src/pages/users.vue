@@ -55,10 +55,8 @@ function handleAddUser() {
     title: 'User created successfully',
     description: 'The user has been created successfully.',
   })
-}
-watch(configQuery, () => {
   execute()
-}, { deep: true })
+}
 async function confirmResetPassword(user: any) {
   const confirm = await confirmStore.showConfirmDialog({
     title: 'Reset Password',
@@ -85,6 +83,9 @@ async function confirmResetPassword(user: any) {
     }
   }
 }
+const listUsers = computed(() => state.value.filter((user: any) => {
+  return user.username.toLowerCase().includes(configQuery.value.search.toLowerCase()) && (configQuery.value.role === 'all' || user.roles.some((role: any) => role.name === configQuery.value.role))
+}))
 </script>
 
 <template>
@@ -135,7 +136,7 @@ async function confirmResetPassword(user: any) {
         <div>Status</div>
       </div>
       <div
-        v-for="user in state"
+        v-for="user in listUsers"
         :key="user.id"
         class="grid lg:grid-cols-7 grid-cols-5 gap-4 p-4 items-center hover:bg-secondary"
       >
@@ -149,7 +150,7 @@ async function confirmResetPassword(user: any) {
         <div class="lg:col-span-2">
           {{ user.full_name }}
         </div>
-        <div>{{ user.role }}</div>
+        <div>{{ user.roles.map(role => role.name).join(',') }}</div>
         <div class="flex justify-between items-center gap-2">
           <span
             class="px-2 py-1 rounded text-sm truncate"
@@ -157,7 +158,7 @@ async function confirmResetPassword(user: any) {
           >
             {{ user.is_active ? 'Active' : 'Inactive' }}
           </span>
-          <DropdownMenu v-if="user.role !== 'admin' && userStore?.user?.role === 'admin'">
+          <DropdownMenu v-if="user.role !== 'admin' && userStore?.user?.roles.includes(UserRole.ADMIN)">
             <DropdownMenuTrigger
               class="cursor-pointer"
               as-child
@@ -177,12 +178,6 @@ async function confirmResetPassword(user: any) {
           </DropdownMenu>
         </div>
       </div>
-      <PaginationTable
-        total="10"
-        :current-page="configQuery.page"
-        :items-per-page="configQuery.limit"
-        :is-loading="isLoading"
-      />
     </div>
   </div>
   <AddUserModal

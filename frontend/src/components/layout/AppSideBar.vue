@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { useUserStore } from '@/stores/user'
 import { UserRole } from '@/types'
 
@@ -22,13 +22,20 @@ const listNav = ref([
     icon: 'IconDevice',
     title: 'Device',
     url: '/devices',
-
+    roles: [UserRole.TEAM_LEAD],
+  },
+  {
+    id: 4,
+    icon: 'IconGroup',
+    title: 'Groups Devices',
+    url: '/groups',
+    roles: [UserRole.TEAM_LEAD],
   },
 ])
 const listNavFilter = computed(() => {
   return listNav.value.filter((item) => {
     if (item.roles) {
-      return item.roles.includes(userStore?.user?.role)
+      return userStore?.user?.roles?.some((role: UserRole) => item.roles.includes(role))
     }
     return true
   })
