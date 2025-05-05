@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { Command } from '@/types'
 import {
   Pagination,
   PaginationEllipsis,
@@ -10,47 +11,59 @@ import {
   PaginationPrev,
 } from '@/components/ui/pagination'
 import { toast } from '@/components/ui/toast'
-import { useDeviceStore } from '@/stores/device'
-import { useUserStore } from '@/stores/user'
-import { type Device, type DeviceGroup, UserRole } from '@/types'
+import { useCommandStore } from '@/stores/command'
 import { useAsyncState } from '@vueuse/core'
-import { MoreHorizontal } from 'lucide-vue-next'
 
-const deviceStore = useDeviceStore()
-const userStore = useUserStore()
-const isCreateGroupModalVisible = ref(false)
+interface CommandData extends Command {
+  is_selected: boolean
+}
+const commandStore = useCommandStore()
+const isCreateCommandModalVisible = ref(false)
+const createDeviceModal = ref<any>(null)
 const configQuery = ref({
   page: 1,
   limit: 10,
   username: '',
   status: 'all',
 })
-const { execute, state: listGroups, isLoading } = useAsyncState<{ total: number, data: DeviceGroup[] }>(() => {
+
+const { execute, state: commands, isLoading } = useAsyncState<{ total: number, commands: CommandData[] }>(async () => {
   const config = {
     skip: (configQuery.value.page - 1) * configQuery.value.limit,
     limit: configQuery.value.limit,
   }
-  return deviceStore.getGroupList(config)
+  const response = await commandStore.getCommandList(config)
+  response.commands.forEach((device: any) => {
+    device.is_selected = false
+  })
+  return response
 }, {
   total: 0,
-  data: [],
+  commands: [] as CommandData[],
 }, {
   onError: (error) => {
     Promise.reject(error)
   },
 })
 
-function openCreateDeviceModal() {
-  isCreateGroupModalVisible.value = true
+watch(() => configQuery.value.page, () => {
+  execute()
+})
+
+function openCreateCommandModal() {
+  isCreateCommandModalVisible.value = true
 }
-async function handleCreateDevice(data: any) {
-  await deviceStore.createGroup(data)
+
+async function handleCreateCommand(data: any) {
+  console.log('Creating command:', data)
+  await commandStore.createCommand(data)
   toast({
     title: 'Device created successfully',
     description: 'The device has been created successfully.',
   })
-  isCreateGroupModalVisible.value = false
+  isCreateCommandModalVisible.value = false
   execute()
+  createDeviceModal.value?.close()
 }
 </script>
 
@@ -58,48 +71,40 @@ async function handleCreateDevice(data: any) {
   <!-- Welcome -->
   <div class="flex flex-col gap-4 p-4 h-[calc(100vh-64px)]">
     <div class="flex justify-end">
-      <Button @click="openCreateDeviceModal">
-        Create Group
+      <Button @click="openCreateCommandModal">
+        Create new Command
       </Button>
     </div>
     <template
-      v-if="!isLoading && listGroups.data.length > 0"
+      v-if="!isLoading && commands.commands.length > 0"
     >
       <div class="relative rounded-lg overflow-hidden shadow-md w-full bg-card overflow-y-auto">
-        <div class="grid grid-cols-3 gap-4 p-4 border-b font-semibold sticky top-0 bg-card z-10">
+        <div class="grid grid-cols-2 gap-4 p-4 border-b font-semibold sticky top-0 bg-card z-10">
           <div>
-            Name
+            Text
           </div>
           <div>
-            Status
-          </div>
-          <div>
-            Created At
+            Description
           </div>
         </div>
         <div
-          v-for="device in listGroups.data"
-          :key="device.id"
-          class="grid grid-cols-3 gap-4 p-4 items-center hover:bg-secondary"
+          v-for="command in commands.commands"
+          :key="command.id"
+          class="grid grid-cols-2 gap-4 p-4 items-center hover:bg-secondary"
         >
-          <!-- Avatar and Name -->
-          <div class="flex items-center gap-4 truncate">
-            {{ device.name }}
+          <div>
+            {{ command.commands_text }}
           </div>
-          <div class="truncate">
-            {{ device.is_actived ? 'Active' : 'Inactive' }}
+          <div>
+            {{ command.description }}
           </div>
-          <div class="truncate">
-            {{ device.created_at.split('T')[0] }}
-          </div>
-
         </div>
 
         <Pagination
           v-slot="{ page }"
           v-model:page="configQuery.page"
           :items-per-page="configQuery.limit"
-          :total="listGroups.total"
+          :total="commands.total"
           :sibling-count="1"
           :default-page="configQuery.page"
           show-edges
@@ -124,12 +129,18 @@ async function handleCreateDevice(data: any) {
         </Pagination>
       </div>
     </template>
-    <span v-else-if="!isLoading && listGroups.data.length === 0" class="text-center text-muted-foreground">
-      No groups found
+    <span v-else-if="!isLoading && commands.commands.length === 0" class="text-center text-muted-foreground">
+      No devices found
     </span>
   </div>
-  <CreateGroupModal
-    v-model:open="isCreateGroupModalVisible"
-    @create="handleCreateDevice"
+  <CreateCommandModal
+    v-model:open="isCreateCommandModalVisible"
+    @create="handleCreateCommand"
   />
+
+  <!-- <AddDeviceToGroupModal
+    v-model:open="isAddDeviceToGroupModalVisible"
+    :groups="listGroups.data"
+    @confirm="handleAddDeviceToGroup"
+  /> -->
 </template>

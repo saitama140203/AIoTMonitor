@@ -46,7 +46,7 @@ const isCreatable = computed(() => {
           :disabled="!isCreatable"
           @click="handleCreate"
         >
-          Tạo
+          Create
         </Button>
       </DialogFooter>
     </DialogContent>

@@ -20,7 +20,7 @@ const listNav = ref([
   {
     id: 3,
     icon: 'IconDevice',
-    title: 'Device',
+    title: 'Devices',
     url: '/devices',
     roles: [UserRole.TEAM_LEAD],
   },
@@ -29,6 +29,21 @@ const listNav = ref([
     icon: 'IconGroup',
     title: 'Groups Devices',
     url: '/groups',
+    roles: [UserRole.TEAM_LEAD],
+  },
+  {
+    id: 5,
+    icon: 'IconCommand',
+    title: 'Commands',
+    url: '/commands',
+    roles: [UserRole.TEAM_LEAD],
+
+  },
+  {
+    id: 6,
+    icon: 'IconProfile',
+    title: 'Profiles',
+    url: '/profiles',
     roles: [UserRole.TEAM_LEAD],
   },
 ])

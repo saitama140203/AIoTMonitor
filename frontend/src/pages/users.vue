@@ -33,7 +33,7 @@ const listFilterRole = ref([
   { value: UserRole.TEAM_LEAD, label: 'Team lead' },
 ])
 
-const { isLoading, execute, state } = useAsyncState(() => {
+const { execute, state } = useAsyncState(() => {
   const config = {
     skip: (configQuery.value.page - 1) * configQuery.value.limit,
     limit: configQuery.value.limit,
@@ -150,7 +150,7 @@ const listUsers = computed(() => state.value.filter((user: any) => {
         <div class="lg:col-span-2">
           {{ user.full_name }}
         </div>
-        <div>{{ user.roles.map(role => role.name).join(',') }}</div>
+        <div>{{ user.roles.map((role:any) => role.name).join(',') }}</div>
         <div class="flex justify-between items-center gap-2">
           <span
             class="px-2 py-1 rounded text-sm truncate"

@@ -19,3 +19,11 @@ export interface Device {
   created_by: number
   group_id: number | null
 }
+export interface DeviceGroup {
+  id: number
+  name: string
+  is_actived: number
+  created_at: string
+  updated_at: string
+  devices: Device[]
+}

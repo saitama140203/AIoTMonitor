@@ -7,9 +7,10 @@ const { open } = defineProps({
     required: true,
   },
 })
-
 const emit = defineEmits(['update:open', 'create'])
-
+defineExpose({
+  close,
+})
 const device = ref<BodyCreateDevice>({
   name: '',
   username: '',
@@ -18,8 +19,8 @@ const device = ref<BodyCreateDevice>({
   password: '',
   platform: '',
 })
-function handleCreate() {
-  emit('create', device.value)
+function close() {
+  emit('update:open', false)
   device.value = {
     name: '',
     username: '',
@@ -122,7 +123,7 @@ const isCreatable = computed(() => {
         <Button
           type="submit"
           :disabled="!isCreatable"
-          @click="handleCreate"
+          @click="$emit('create', device)"
         >
           Create
         </Button>
