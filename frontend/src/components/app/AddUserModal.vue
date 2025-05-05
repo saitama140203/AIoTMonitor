@@ -17,7 +17,7 @@ const { open } = defineProps({
 const emit = defineEmits(['update:open', 'add'])
 const adminStore = useAdminStore()
 const listFilterRole = ref([
-  { value: UserRole.ADMIN, label: 'Admin' },
+  { value: UserRole.SUPERVISOR, label: 'Supervisor' },
   { value: UserRole.OPERATOR, label: 'Operator' },
   { value: UserRole.TEAM_LEAD, label: 'Team lead' },
 ])
