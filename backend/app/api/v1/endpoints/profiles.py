@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, status, Query
+from fastapi import APIRouter, Depends, status, Query, Path
 from sqlalchemy.orm import Session
 from app.schemas.profile import ProfileCreate, ProfileResponse, AssignProfile
-from app.services.profile_sevice import create_profile, assign_profile, get_all_profiles
+from app.services.profile_sevice import create_profile, assign_profile, get_all_profiles, get_profile_by_id, get_unassigned_commands, get_unassigned_operators
 from app.api.v1.deps import get_db, get_current_team_lead, get_current_user
 from app.models.user import User
 
@@ -39,3 +39,28 @@ def get_all_profiles_endpoints(
     limit: int = Query(10, gt=0),
 ):
     return get_all_profiles(db, current_user, skip, limit)
+
+@router.get("/get_profile_by_id/{profile_id}"  
+)
+def get_profile_by_id_ep(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    profile_id: int = Path(..., gt=0),
+):
+    return get_profile_by_id(db, current_user, profile_id=profile_id)
+
+@router.get("/profiles/{profile_id}/unassigned_operators")
+def unassigned_operators_endpoint(
+    profile_id: int = Path(..., gt=0),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return get_unassigned_operators(db=db, current_user=current_user, profile_id=profile_id)
+
+@router.get("/profiles/{profile_id}/unassigned_commands")
+def unassigned_commands_endpoint(
+    profile_id: int = Path(..., gt=0),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return get_unassigned_commands(db=db, current_user=current_user, profile_id=profile_id)

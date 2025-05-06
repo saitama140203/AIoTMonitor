@@ -25,7 +25,7 @@ def create_command_profiles_endpoint(
 ):
     return create_command_profiles(db, data, current_user)
 
-@router.get("get_all_commands")
+@router.get("/get_all_commands")
 def get_all_commands_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
