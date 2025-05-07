@@ -1,8 +1,9 @@
 from datetime import datetime
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, status
-from app.models import Profile
-from app.models.user import User
+from typing import List, Dict, Any
+from app.models import Profile, Command
+from app.models.user import User, UserRole
 from app.models.profile import ProfileUser
 from app.schemas.profile import ProfileCreate, AssignProfile, AssignProfileResponse
 
@@ -145,3 +146,137 @@ def get_all_profiles(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error fetching profiles: {str(e)}"
         )
+    
+def get_profile_by_id(
+        db: Session,
+        current_user: User,
+        profile_id: int
+) -> Dict[str, Any]:
+    try:
+        if not any(role.role.name in ("team_lead") for role in current_user.roles):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Require Team Lead"
+            )        
+
+        profile = db.query(Profile).filter(Profile.id == profile_id).first()
+        if not profile:
+            return {"error": "Profile not found"}
+
+        operators: List[Dict[str, Any]] = [            
+                pu.user.username            
+            for pu in profile.profile_users
+        ]
+
+        commands: List[Dict[str, Any]] = [
+                cp.command.commands_text
+            for cp in profile.command_profiles
+        ]
+
+        return {
+            "code": status.HTTP_200_OK,
+            "message": "Get profile successfully",
+            "data": {
+                "name": profile.name,
+                "operators": operators,
+                "commands": commands
+            }
+        }
+
+    except HTTPException as e:
+        db.rollback()
+        raise e
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching profile: {str(e)}"
+        )
+    
+def get_unassigned_operators(
+    db: Session,
+    current_user: User,
+    profile_id: int
+) -> Dict[str, Any]:
+    if not any(role.role.name == "team_lead" for role in current_user.roles):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Require Team Lead"
+        )
+
+    profile = db.query(Profile).filter(Profile.id == profile_id).first()
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile not found"
+        )
+
+    assigned_operator_ids = [pu.operator_id for pu in profile.profile_users]
+
+    unassigned_users = (
+        db.query(User)
+        .options(joinedload(User.roles).joinedload(UserRole.role))
+        .filter(User.id.notin_(assigned_operator_ids))
+        .all()
+    )
+
+    operators_only = [
+        user for user in unassigned_users
+        if any(user_role.role.name == "operator" for user_role in user.roles)
+    ]
+
+    if not operators_only:        
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No unassigned operators found"
+        )
+
+    return {
+        "code": status.HTTP_200_OK,
+        "message": "Get unassigned operators successfully",
+        "data": [
+            {"id": user.id, "username": user.username, "full_name": user.full_name}
+            for user in operators_only
+        ]
+    }
+
+def get_unassigned_commands(
+    db: Session,
+    current_user: User,
+    profile_id: int
+) -> Dict[str, Any]:
+    if not any(role.role.name == "team_lead" for role in current_user.roles):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Require Team Lead"
+        )
+
+    profile = db.query(Profile).filter(Profile.id == profile_id).first()
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile not found"
+        )
+
+    assigned_command_ids = [cp.command_id for cp in profile.command_profiles]
+
+    unassigned_commands = db.query(Command).filter(Command.id.notin_(assigned_command_ids)).all()
+
+    if not unassigned_commands:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No unassigned commands found"
+        )
+
+    return {
+        "code": status.HTTP_200_OK,
+        "message": "Get unassigned commands successfully",
+        "data": [
+            {
+                "id": cmd.id,
+                "commands_text": cmd.commands_text,
+                "description": cmd.description
+            }
+            for cmd in unassigned_commands
+        ]
+    }
