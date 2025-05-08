@@ -10,7 +10,7 @@ export const passwordSchema = z
   .refine(value => /[a-z]/.test(value), { message: 'Password must include at least one letter' })
   .refine(value => /\d/.test(value), { message: 'Password must include at least one number' })
 
-export const requiredStringSchema = z.string()
+export const requiredStringSchema = z.string().min(1, { message: 'This field is required' })
 
 export const signupValidator = z
   .object({
@@ -23,8 +23,8 @@ export const signupValidator = z
     path: ['confirmPassword'],
   })
 
-export const emailValidator = z.object({
-  email: emailSchema,
+export const usernameValidator = z.object({
+  username: requiredStringSchema,
 })
 
 export const loginValidator = z.object({

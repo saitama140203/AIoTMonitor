@@ -10,8 +10,6 @@ import {
   PaginationPrev,
 } from '@/components/ui/pagination'
 import { toast } from '@/components/ui/toast'
-import { useAdminStore } from '@/stores/admin'
-import { useCommandStore } from '@/stores/command'
 import { useDeviceStore } from '@/stores/device'
 import { useProfileStore } from '@/stores/profile'
 import { type Command, type Device, type DeviceGroup, type User, UserRole } from '@/types'
@@ -23,18 +21,9 @@ interface Profile {
   group_id: number
   created_at: string
 }
-interface CommandData extends Command {
-  is_selected: boolean
-}
 const deviceStore = useDeviceStore()
-const commandStore = useCommandStore()
 const profileStore = useProfileStore()
-const adminStore = useAdminStore()
-
-const selectedProfile = ref('')
 const isCreateProfileModalVisible = ref(false)
-const isCreateCommandModalVisible = ref(false)
-const isAssignProfileToUserModalVisible = ref(false)
 const configQuery = ref({
   page: 1,
   limit: 10,
@@ -72,37 +61,6 @@ const { execute, state: listProfiles, isLoading } = useAsyncState<{ total: numbe
 watch(() => configQuery.value.page, () => {
   execute()
 })
-
-const { state: commands } = useAsyncState<{ total: number, commands: CommandData[] }>(async () => {
-  const config = {
-    skip: 0,
-    limit: 5000,
-  }
-  const response = await commandStore.getCommandList(config)
-  response.commands.forEach((device: any) => {
-    device.is_selected = false
-  })
-  return response
-}, {
-  total: 0,
-  commands: [] as CommandData[],
-}, {
-  onError: (error) => {
-    Promise.reject(error)
-  },
-})
-const { state: operators } = useAsyncState(async () => {
-  const config = {
-    skip: 0,
-    limit: 1000,
-  }
-  const response = await adminStore.getListUsers(config)
-  return response.filter((user: any) => user.roles.some((role: any) => role.name === UserRole.OPERATOR))
-}, [], {
-  onError: (error) => {
-    Promise.reject(error)
-  },
-})
 function openCreateDeviceModal() {
   isCreateProfileModalVisible.value = true
 }
@@ -114,44 +72,6 @@ async function handleCreateProfile(data: any) {
   })
   isCreateProfileModalVisible.value = false
   execute()
-}
-function openCreateCommandModal(profileId: string) {
-  selectedProfile.value = profileId
-  isCreateCommandModalVisible.value = true
-}
-function openAssignModal(profileId: string) {
-  selectedProfile.value = profileId
-  isAssignProfileToUserModalVisible.value = true
-}
-async function handleAddCommandToProfile(data: any) {
-  if (data.length === 0) {
-    toast({
-      title: 'No command selected',
-      description: 'Please select at least one command.',
-      variant: 'destructive',
-    })
-    return
-  }
-  await profileStore.addCommandToProfile({
-    command_ids: data,
-    profile_id: selectedProfile.value,
-  })
-  selectedProfile.value = ''
-  toast({
-    title: 'Command added to profile',
-    description: 'The command has been added to the profile successfully.',
-  })
-}
-async function handleAssignProfileToUser(operator: User) {
-  await profileStore.assignProfile({
-    operator_id: operator.id,
-    profile_id: selectedProfile.value,
-  })
-  toast({
-    title: 'Profile assigned to user',
-    description: 'The profile has been assigned to the user successfully.',
-  })
-  selectedProfile.value = ''
 }
 </script>
 
@@ -177,6 +97,9 @@ async function handleAssignProfileToUser(operator: User) {
           <div>
             Created At
           </div>
+          <div>
+            Action
+          </div>
         </div>
         <div
           v-for="profile in listProfiles.data"
@@ -194,17 +117,12 @@ async function handleAssignProfileToUser(operator: User) {
             {{ profile.created_at.split('T')[0] }}
           </div>
           <div class="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              @click.stop="openAssignModal(profile.id)"
+            <RouterLink
+              :to="`/profiles/${profile.id}`"
+              class="text-blue-500 hover:text-blue-700"
             >
-              Assign to User
-            </Button>
-            <Button
-              @click.stop="openCreateCommandModal(profile.id)"
-            >
-              Update Commands
-            </Button>
+              Detail
+            </RouterLink>
           </div>
         </div>
 
@@ -245,16 +163,5 @@ async function handleAssignProfileToUser(operator: User) {
     v-model:open="isCreateProfileModalVisible"
     :groups="listGroups.data"
     @create="handleCreateProfile"
-  />
-  <AddCommandToProfileModal
-    v-model:open="isCreateCommandModalVisible"
-    v-model="commands.commands"
-    @confirm="handleAddCommandToProfile"
-  />
-  <AssignProfileToUserModal
-    v-model:open="isAssignProfileToUserModalVisible"
-    :profile-id="selectedProfile"
-    :operators="operators"
-    @assign="handleAssignProfileToUser"
   />
 </template>

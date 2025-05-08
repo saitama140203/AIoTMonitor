@@ -18,5 +18,5 @@ export function getListUsers(config: { role?: string, limit?: number, skip?: num
   })
 }
 export function resetPassword(email: string) {
-  return $put('/auth/reset-password', { email })
+  return $put('/auth/reset-password', { username: email })
 }
