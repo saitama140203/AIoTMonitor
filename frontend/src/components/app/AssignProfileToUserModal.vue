@@ -70,10 +70,6 @@ const isCreatable = computed(() => {
                 :value="user"
               >
                 {{ user.full_name }} - {{ user.username }}
-
-                <ComboboxItemIndicator>
-                  <Check />
-                </ComboboxItemIndicator>
               </ComboboxItem>
             </ComboboxGroup>
           </ComboboxList>

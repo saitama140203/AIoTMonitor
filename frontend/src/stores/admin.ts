@@ -15,11 +15,8 @@ export const useAdminStore = defineStore('admin', () => {
     }
     return apiAdmin.getListUsers(config)
   }
-  async function resetPassword(email: string) {
-    if (!email) {
-      return Promise.reject(new Error('Invalid email'))
-    }
-    return apiAdmin.resetPassword(email)
+  async function resetPassword(username: string) {
+    return apiAdmin.resetPassword(username)
   }
   return {
     createUser,

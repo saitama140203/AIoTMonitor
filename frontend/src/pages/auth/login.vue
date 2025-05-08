@@ -51,6 +51,12 @@ const onSubmit = form.handleSubmit(async (values) => {
               <InputValidator id="password" type="password" placeholder="Password" label="Password" name="password" />
             </div>
           </div>
+          <RouterLink
+            class="text-sm text-blue-500 hover:text-blue-700"
+            to="/auth/forgot-password"
+          >
+            Reset Admin Password
+          </RouterLink>
           <Button
             type="submit"
             :is-loading="isLoading"

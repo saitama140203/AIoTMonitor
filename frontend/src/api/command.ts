@@ -5,7 +5,7 @@ export function createCommand(data: any) {
 }
 
 export function getCommandList(cofig: any) {
-  return $get('/commandsget_all_commands', { params: cofig })
+  return $get('/commands/get_all_commands', { params: cofig })
 }
 
 export function addCommandToProfile(data: any) {
