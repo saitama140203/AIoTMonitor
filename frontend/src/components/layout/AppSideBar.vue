@@ -46,6 +46,13 @@ const listNav = ref([
     url: '/profiles',
     roles: [UserRole.TEAM_LEAD],
   },
+  {
+    id: 7,
+    icon: 'IconProfile',
+    title: ' List Profiles',
+    url: '/profiles_operator',
+    roles: [UserRole.OPERATOR],
+  },
 ])
 const listNavFilter = computed(() => {
   return listNav.value.filter((item) => {

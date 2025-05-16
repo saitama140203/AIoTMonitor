@@ -142,4 +142,13 @@ def get_all_commands(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error fetching commands: {str(e)}"
         )
-    
+
+def get_whitelist_commands_by_profile(db: Session, profile_id: int) -> set[str]:
+    results = (
+        db.query(Command.commands_text)
+        .join(CommandProfile, Command.id == CommandProfile.command_id)
+        .filter(CommandProfile.profile_id == profile_id)
+        .all()
+    )
+    return {cmd[0] for cmd in results}
+

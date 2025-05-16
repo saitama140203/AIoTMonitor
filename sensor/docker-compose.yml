@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  device-1:
+    build: .
+    container_name: device-1
+    environment:
+      SSH_USER: root
+      SSH_PASS: secret123
+    ports:
+      - "2222:22"
+    networks:
+      aiot-network:
+        ipv4_address: 172.25.0.10
+
+  device-2:
+    build: .
+    container_name: device-2
+    environment:
+      SSH_USER: root
+      SSH_PASS: secret123
+    ports:
+      - "2223:22"
+    networks:
+      aiot-network:
+        ipv4_address: 172.25.0.11
+
+  device-3:
+    build: .
+    container_name: device-3
+    environment:
+      SSH_USER: root
+      SSH_PASS: secret123
+    ports:
+      - "2224:22"
+    networks:
+      aiot-network:
+        ipv4_address: 172.25.0.12
+
+networks:
+  aiot-network:
+    external: true

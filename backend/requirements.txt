@@ -1,5 +1,5 @@
 fastapi==0.109.0
-uvicorn==0.30.0
+uvicorn[standard]==0.30.0
 sqlalchemy==2.0.40
 pydantic==2.11.2
 pydantic-settings==2.0.3
@@ -11,3 +11,4 @@ alembic==1.15.2
 psycopg2-binary==2.9.9
 bcrypt==4.0.1
 python-jose==3.3.0
+paramiko==3.5.1

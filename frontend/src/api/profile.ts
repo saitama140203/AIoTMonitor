@@ -18,3 +18,17 @@ export function getUnassignedProfileList(id: number) {
 export function getUnassignedCommnands(id: number) {
   return $get(`/profiles/profiles/${id}/unassigned_commands`)
 }
+
+export function getProfile(config: any) {
+  return $get(`/profiles/profiles/me`, {params: config})
+}
+
+export function getProfileResources(
+  profileId: number,
+  pagination: { skip: number; limit: number }
+) {
+  // Đảm bảo endpoint này khớp với API backend
+  return $get(`/profiles/profiles/${profileId}/resources`, {
+    params: pagination
+  })
+}

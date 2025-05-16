@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status, Query, Path
 from sqlalchemy.orm import Session
 from app.schemas.profile import ProfileCreate, ProfileResponse, AssignProfile
-from app.services.profile_sevice import create_profile, assign_profile, get_all_profiles, get_profile_by_id, get_unassigned_commands, get_unassigned_operators
+from app.services.profile_sevice import create_profile, assign_profile, get_all_profiles, get_profile_by_id, get_unassigned_commands, get_unassigned_operators, get_resources, get_list_profile_by_operator
 from app.api.v1.deps import get_db, get_current_team_lead, get_current_user
 from app.models.user import User
 
@@ -64,3 +64,24 @@ def unassigned_commands_endpoint(
     current_user: User = Depends(get_current_user)
 ):
     return get_unassigned_commands(db=db, current_user=current_user, profile_id=profile_id)
+
+
+
+@router.get("/profiles/{profile_id}/resources")
+def get_resources_endpoind(
+    profile_id: int =  Path(..., gt=0),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, gt=0)
+):
+    return get_resources(profile_id, db, current_user, skip, limit)
+
+@router.get("/profiles/me")
+def get_list_profile_by_operator_endpoint(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, gt=0),
+):
+    return get_list_profile_by_operator(db, current_user, skip, limit)

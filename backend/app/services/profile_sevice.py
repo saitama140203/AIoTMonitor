@@ -3,10 +3,11 @@ from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, status
 from typing import List, Dict, Any
 from app.models import Profile, Command
+from app.models.device import Device, Group
 from app.models.user import User, UserRole
 from app.models.profile import ProfileUser
 from app.schemas.profile import ProfileCreate, AssignProfile, AssignProfileResponse
-
+from app.models.command import CommandProfile
 def create_profile(
     db: Session,
     profile_data: ProfileCreate,
@@ -280,3 +281,149 @@ def get_unassigned_commands(
             for cmd in unassigned_commands
         ]
     }
+
+
+
+def get_resources(
+    profile_id: int,
+    db: Session,
+    current_user: User,
+    skip: int = 0,
+    limit: int = 10
+) -> Dict[str, Any]:
+
+
+    # 2. Lấy profile
+    profile = db.query(Profile).filter(Profile.id == profile_id).first()
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Không tìm thấy profile với id: {profile_id}",
+        )
+
+    # 3. Commands theo profile (phân trang)
+    cmd_q = (
+        db.query(Command)
+        .join(CommandProfile, CommandProfile.command_id == Command.id)
+        .filter(CommandProfile.profile_id == profile_id)
+    )
+    total_commands = cmd_q.count()
+    commands = cmd_q.offset(skip).limit(limit).all()
+
+    # 4. Devices trong group của profile (nếu có)
+    total_devices = 0
+    devices = []
+    if profile.group_id:
+        dev_q = db.query(Device).filter(Device.group_id == profile.group_id)
+        total_devices = dev_q.count()
+        devices = dev_q.offset(skip).limit(limit).all()
+
+    # 5. Operators gán với profile
+    op_q = (
+        db.query(User)
+        .join(ProfileUser, ProfileUser.operator_id == User.id)
+        .filter(ProfileUser.profile_id == profile_id)
+    )
+    total_operators = op_q.count()
+    operators = op_q.offset(skip).limit(limit).all()
+
+    # 6. Trả về kết quả
+    return {
+        "profile": {
+            "id": profile.id,
+            "name": profile.name,
+            "created_at": profile.created_at,
+            "group_id": profile.group_id,
+            "group_name": profile.group.name if profile.group else None,
+        },
+        "commands": {
+            "total": total_commands,
+            "skip": skip,
+            "limit": limit,
+            "items": [
+                {
+                    "id": c.id,
+                    "commands_text": c.commands_text,
+                    "description": c.description,
+                    "created_by": c.created_by,
+                }
+                for c in commands
+            ],
+        },
+        "devices": {
+            "total": total_devices,
+            "skip": skip,
+            "limit": limit,
+            "items": [
+                {
+                    "id": d.id,
+                    "name": d.name,
+                    "ip": d.ip,
+                    "port": d.port,
+                    "status": d.status,
+                    "platform": d.platform,
+                    "lastseen": d.lastseen,
+                }
+                for d in devices
+            ],
+        },
+        "operators": {
+            "total": total_operators,
+            "skip": skip,
+            "limit": limit,
+            "items": [
+                {
+                    "id": o.id,
+                    "email": o.email,
+                    "full_name": o.full_name,
+                }
+                for o in operators
+            ],
+        },
+    }
+
+
+
+def get_list_profile_by_operator(
+        db: Session,
+        current_user: User,
+        skip: int = 0,
+        limit: int = 10,
+):
+    try:
+        # Lấy tất cả profile được liên kết với current_user qua ProfileUser
+        profiles_query = (
+            db.query(Profile)
+            .join(ProfileUser, ProfileUser.profile_id == Profile.id)
+            .filter(ProfileUser.operator_id == current_user.id)
+            .offset(skip)
+            .limit(limit)
+        )
+
+        total_profiles = (
+            db.query(Profile)
+            .join(ProfileUser, ProfileUser.profile_id == Profile.id)
+            .filter(ProfileUser.operator_id == current_user.id)
+            .count()
+        )
+
+        profiles = profiles_query.all()
+
+        return {
+            "message": "Profiles retrieved successfully",
+            "code": status.HTTP_200_OK,
+            "total": total_profiles,
+            "skip": skip,
+            "limit": limit,
+            "data": profiles
+        }
+
+    except HTTPException as e:
+        db.rollback()
+        raise e
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching profiles: {str(e)}"
+        )
