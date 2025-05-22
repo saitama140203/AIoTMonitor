@@ -9,7 +9,6 @@ from app.models.user import User
 router = APIRouter()
 
 
-
 @router.get("", response_model=List[UserResponse])
 def fetch_users_with_roles(
     skip: int = Query(0, ge=0),

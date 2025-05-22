@@ -53,6 +53,28 @@ const listNav = ref([
     url: '/profiles_operator',
     roles: [UserRole.OPERATOR],
   },
+  // Thêm các mục navigation cho Supervisor
+  {
+    id: 8,
+    icon: 'IconMonitor',
+    title: 'Active Sessions',
+    url: '/supervisor/sessions',
+    roles: [UserRole.SUPERVISOR],
+  },
+  {
+    id: 9,
+    icon: 'IconHistory',
+    title: 'Session History',
+    url: '/supervisor/history',
+    roles: [UserRole.SUPERVISOR],
+  },
+  {
+    id: 10,
+    icon: 'IconAlert',
+    title: 'Alerts',
+    url: '/supervisor/alerts',
+    roles: [UserRole.SUPERVISOR],
+  },
 ])
 const listNavFilter = computed(() => {
   return listNav.value.filter((item) => {

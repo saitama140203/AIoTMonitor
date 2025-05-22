@@ -2,8 +2,51 @@ import { middlewareAuth, middlewareLayout } from '@/middlewares'
 import generatedRoutes from '~pages'
 import { setupLayouts } from 'virtual:generated-layouts'
 import { createRouter, createWebHistory } from 'vue-router'
+import { UserRole } from './types'
+import ActiveSessions from '@/components/supervisor/ActiveSessions.vue'
+import SessionHistory from '@/components/supervisor/SessionHistory.vue'
+import SupervisorDashboard from '@/pages/supervisor/SupervisorDashboard.vue'
 
-const routes = setupLayouts(generatedRoutes)
+const manualRoutes = [
+  {
+    path: '/supervisor',
+    component: SupervisorDashboard,
+    children: [
+      {
+        path: '',
+        redirect: 'sessions',
+      },
+      {
+        path: 'sessions',
+        name: 'SupervisorActiveSessions',
+        component: ActiveSessions,
+        meta: {
+          title: 'Active Sessions',
+          requiresAuth: true,
+          allowedRoles: [UserRole.SUPERVISOR]
+        }
+      },
+      {
+        path: 'history',
+        name: 'SupervisorSessionHistory',
+        component: SessionHistory,
+        meta: {
+          title: 'Session History',
+          requiresAuth: true,
+          allowedRoles: [UserRole.SUPERVISOR]
+        }
+      }
+    ],
+    meta: {
+      title: 'Supervisor',
+      requiresAuth: true,
+      allowedRoles: [UserRole.SUPERVISOR]
+    }
+  }
+]
+
+
+const routes = setupLayouts(generatedRoutes).concat(manualRoutes)
 
 const router = createRouter({
   history: createWebHistory(),

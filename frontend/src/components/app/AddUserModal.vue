@@ -20,6 +20,7 @@ const listFilterRole = ref([
   { value: UserRole.SUPERVISOR, label: 'Supervisor' },
   { value: UserRole.OPERATOR, label: 'Operator' },
   { value: UserRole.TEAM_LEAD, label: 'Team lead' },
+  { value: UserRole.SUPERVISOR, label: 'Supervisor' },
 ])
 
 const { handleSubmit, resetForm } = useForm({

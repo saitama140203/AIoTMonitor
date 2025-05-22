@@ -21,6 +21,8 @@ class User(Base):
     devices = relationship("Device", back_populates="creator")
     commands = relationship("Command", back_populates="creator")
     activity_logs = relationship("ActivityLog", back_populates="user")
+    sessions = relationship("Session", back_populates="operator", cascade="all, delete-orphan")
+    terminated_sessions = relationship("SessionHistory", back_populates="terminator", foreign_keys='SessionHistory.terminated_by', cascade="all, delete-orphan")
 
 class Role(Base):
     __tablename__ = "roles"
