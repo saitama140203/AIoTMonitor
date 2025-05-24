@@ -3,10 +3,17 @@ from sqlalchemy.orm import Session
 from app.schemas.supervisor import SessionDetail, TerminateSessionRequest
 from app.services.supervisor import SupervisorService
 from app.schemas.supervisor import SessionHistoryItem
-from app.api.v1.deps import get_db, get_current_supervisor
+from app.api.v1.deps import get_db, get_current_supervisor,get_current_user
 from app.models import User
+from app.models.session import Session as SessionModal
+from fastapi import Query
 
 router = APIRouter()
+
+@router.post("/sessions")
+def start_session(operator_id: int, device_id: int, db: Session = Depends(get_db)):
+    session = SupervisorService.create_session(db, operator_id, device_id)
+    return {"session_id": session.id}
 
 @router.get("/sessions/active", response_model=list[SessionDetail])
 def list_active_sessions(
@@ -18,12 +25,29 @@ def list_active_sessions(
     except Exception as e:
         raise HTTPException(500, str(e))
 
+@router.get("/sessions", summary="Get active session by operator and device")
+def get_active_session(
+    operator_id: int,
+    device_id: int,
+    db: Session = Depends(get_db)
+):
+    session = SupervisorService.get_active_session_by_operator_and_device(
+        db=db,
+        operator_id=operator_id,
+        device_id=device_id
+    )
+
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    return {"session_id": session.id}
+    
 @router.post("/sessions/{session_id}/terminate")
 def terminate_session(
     session_id: int,
     request: TerminateSessionRequest,
     db: Session = Depends(get_db),
-    supervisor: User = Depends(get_current_supervisor)
+    _= Depends(get_current_supervisor)
 ):
     try:
         SupervisorService.terminate_session(db, session_id, request)

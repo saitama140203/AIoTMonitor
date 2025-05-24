@@ -70,8 +70,35 @@ function connect(config: any) {
     scrollToBottom()
   }
   ws.onclose = () => {
-    term?.writeln('\r\n🔌 Đã ngắt kết nối')
-    scrollToBottom()
+    //term?.writeln('\r\n🔌 Đã ngắt kết nối')
+    //scrollToBottom()
+    let data = e.data;
+    let parsed = null;
+
+    // Thử parse JSON, nếu lỗi thì giữ nguyên text
+    try {
+      parsed = JSON.parse(data);
+    } catch {
+      parsed = null;
+    }
+
+    if (parsed && parsed.type === "terminate") {
+      // Backend đã gửi lệnh terminate session
+      term?.writeln('\r\n🔴 Phiên làm việc đã bị supervisor ngắt kết nối!\r\n')
+      scrollToBottom()
+      ws?.close()
+      alert("Phiên làm việc đã bị supervisor ngắt kết nối!")
+    } else if (typeof data === "string" && data.includes("Session terminated by supervisor")) {
+      // Trường hợp server gửi message thuần text
+      term?.writeln('\r\n🔴 Phiên làm việc đã bị supervisor ngắt kết nối!\r\n')
+      scrollToBottom()
+      ws?.close()
+      alert("Phiên làm việc đã bị supervisor ngắt kết nối!")
+    } else {
+      // Bình thường thì in ra terminal
+      term?.write(data)
+      scrollToBottom()
+    }
   }
   ws.onerror = e => {
     term?.writeln('\r\n⚠️ Lỗi kết nối')

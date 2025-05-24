@@ -6,6 +6,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { Terminal } from 'xterm'
 import 'xterm/css/xterm.css'
+import axios from 'axios'
 
 const termContainer = ref(null)
 let term, ws
@@ -17,27 +18,34 @@ const SSH_PORT = Number(import.meta.env.VITE_SSH_PORT) || 2222
 const SSH_USER = import.meta.env.VITE_SSH_USER // "root"
 const SSH_PASS = import.meta.env.VITE_SSH_PASS // "secret123"
 const SSH_ID = import.meta.env.VITE_SSH_ID // "secret123"
-onMounted(() => {
+
+onMounted(async() => {
   // Khởi xterm
+  console.log("🌐 Component mounted")
   term = new Terminal({ cols: 80, rows: 24 })
   term.open(termContainer.value)
   term.write('\x1b[32m⏳ Đang kết nối WebSocket tới SSH-proxy...\x1b[0m\r\n')
 
+
   // Mở WebSocket tới FastAPI
-  ws = new WebSocket(WS_URL)
+  ws = new WebSocket(`${WS_URL}?session_id=${sessionId}`)
   ws.onopen = () => {
+    console.log("✅ WebSocket đã mở")
+    
     term.write('\x1b[32m✅ WebSocket đã kết nối\x1b[0m\r\n')
     term.write(`\x1b[36m→ SSH: ${SSH_USER}@${SSH_HOST}:${SSH_PORT}\x1b[0m\r\n\n`)
-
+    
     // Gửi payload SSH đến FastAPI
-    ws.send(JSON.stringify({
+    const payload = {
       host: SSH_HOST,
       port: SSH_PORT,
       username: SSH_USER,
       password: SSH_PASS,
-      profile_id:SSH_ID
-    }))
-
+      profile_id: SSH_ID,
+      session_id: sessionId  
+    }
+    console.log('Payload gửi:', payload)
+    ws.send(JSON.stringify(payload))
     // Tự động chạy lệnh show cấu hình device
     setTimeout(() => {
       term.write('\r\n\x1b[33m→ Chạy: cat /etc/device-info.conf\x1b[0m\r\n')
@@ -55,6 +63,7 @@ onMounted(() => {
     console.error(err)
     term.write('\r\n\x1b[31m❌ Lỗi WebSocket\x1b[0m\r\n')
   }
+
 
   // Khi người dùng gõ, đẩy thẳng đến SSH
   term.onData(data => {

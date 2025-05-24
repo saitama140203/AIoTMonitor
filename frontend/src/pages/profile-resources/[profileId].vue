@@ -129,6 +129,7 @@ import { ref, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import Terminal from '@/components/Terminal.vue'
 import { getProfileResources } from '@/api/profile'
+import axios from 'axios'
 
 interface Profile { id: number; name: string; created_at: string; group_id: number; group_name: string }
 interface Device { id: number; name: string; ip: string; port: number; status: string; platform: string; lastseen: string }
@@ -174,12 +175,27 @@ async function onConnectDevice(device: Device) {
   }
   connectedDevice.value = device
   await nextTick()
+
+  const user = JSON.parse(localStorage.getItem('aiot_user') || '{}')
+  const operatorId = user?.user_id || 1
+
+  // Gọi API để lấy session_id từ bảng sessions
+  const response = await axios.get('http://localhost:8000/api/v1/supervisor/sessions', {
+    params: {
+      device_id: device.id,
+      operator_id: operatorId
+    }
+  })
+
+  const sessionId = response.data.session_id
   terminalRef.value?.connect({
     host: device.ip,
     port: device.port,
     username: 'root',
     password: 'secret123',
-    profile_id: profileId.value
+    profile_id: profileId.value,
+    session_id: sessionId
+
   })
 }
 

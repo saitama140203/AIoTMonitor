@@ -4,21 +4,34 @@ from typing import List
 from datetime import datetime
 
 from app.models import  User, Device
-from app.models.session import Session,SessionHistory
+from app.models.session import Session as SessionModal,SessionHistory
 from app.schemas.supervisor import (
     SessionDetail,
     TerminateSessionRequest,
     SessionHistoryItem
 )
+from app.models.session import Session
+from datetime import timedelta
 
 class SupervisorService:
     @staticmethod
+    def create_session(db, operator_id, device_id):
+        new_session = Session(
+            operator_id=operator_id,
+            device_id=device_id,
+            status="active"
+        )
+        db.add(new_session)
+        db.commit()
+        db.refresh(new_session) 
+        return new_session
+    
+    @staticmethod
     def get_active_sessions(db: DBSession) -> List[SessionDetail]:
-        sessions = db.query(Session)\
-            .options(joinedload(Session.operator), joinedload(Session.device))\
-            .filter(Session.status == "active")\
+        sessions = db.query(SessionModal)\
+            .options(joinedload(SessionModal.operator), joinedload(SessionModal.device))\
+            .filter(SessionModal.status == "active")\
             .all()
-        
         return [
             SessionDetail(
                 session_id=session.id,
@@ -32,37 +45,77 @@ class SupervisorService:
 
     @staticmethod
     def terminate_session(db: DBSession, session_id: int, request: TerminateSessionRequest):
-        session = db.query(Session).filter(Session.id == session_id).first()
+        session = db.query(SessionModal).filter(SessionModal.id == session_id).first()
         if not session:
             raise ValueError("Session not found")
 
         if session.status == "terminated":
             raise ValueError("Session already terminated")
 
-        session.status = "terminated"
-        session.end_time = datetime.utcnow()
+        try:
+            session.status = "terminated"
+            session.end_time = datetime.utcnow()
+            history = SessionHistory(
+                session_id=session_id,
+                terminated_by=request.terminated_by,
+                end_status="killed"
+            )
+            db.add(history)
+            db.commit()
+            db.refresh(session)
+        except Exception as e:
+            db.rollback()
+            raise e
 
-        history = SessionHistory(
-            session_id=session_id,
-            terminated_by=request.terminated_by,
-            end_status="killed"
-        )
 
-        db.add(history)
-        db.commit()
-        db.refresh(session)
+    # @staticmethod
+    # def get_session_history(db: DBSession) -> List[SessionHistoryItem]:
+    #     histories = db.query(SessionHistory)\
+    #         .options(joinedload(SessionHistory.session).joinedload(SessionModal.device))\
+    #         .all()
+
+    #     return [
+    #         SessionHistoryItem(
+    #             session_id=history.session_id,
+    #             device_name=history.session.device.name,
+    #             end_status=history.end_status,
+    #             ended_at=history.created_at
+    #         ) for history in histories
+    #     ]
 
     @staticmethod
     def get_session_history(db: DBSession) -> List[SessionHistoryItem]:
         histories = db.query(SessionHistory)\
-            .options(joinedload(SessionHistory.session).joinedload(Session.device))\
+            .options(
+                joinedload(SessionHistory.session)
+                .joinedload(SessionModal.device),
+                joinedload(SessionHistory.session)
+                .joinedload(SessionModal.operator)
+            )\
             .all()
 
         return [
             SessionHistoryItem(
                 session_id=history.session_id,
                 device_name=history.session.device.name,
+                operator_name=history.session.operator.username,
                 end_status=history.end_status,
-                ended_at=history.created_at
+                ended_at=history.created_at,
+                start_time=history.session.start_time 
             ) for history in histories
         ]
+    
+    @staticmethod
+    def get_active_session_by_operator_and_device(
+        db: DBSession,
+        operator_id: int,
+        device_id: int
+    ) -> Session:
+        return db.query(SessionModal)\
+            .filter(
+                SessionModal.operator_id == operator_id,
+                SessionModal.device_id == device_id,
+                SessionModal.status.in_(["active", "terminated"])
+            )\
+            .order_by(SessionModal.start_time.desc())\
+            .first()

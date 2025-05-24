@@ -8,6 +8,8 @@ from app.models.user import User, UserRole
 from app.models.profile import ProfileUser
 from app.schemas.profile import ProfileCreate, AssignProfile, AssignProfileResponse
 from app.models.command import CommandProfile
+from app.models.session import Session as SessionModal
+
 def create_profile(
     db: Session,
     profile_data: ProfileCreate,
@@ -96,12 +98,42 @@ def assign_profile(
             operator_id = assign_profile_data.operator_id
         )
         db.add(profile_user)
+        db.flush()
+        
+        # Lấy device group của profile
+        device_group = db.query(Group).filter(Group.id == profile.group_id).first()
+        if not device_group:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Device group not found for this profile"
+            )
+        
+        devices = db.query(Device).filter(Device.group_id == device_group.id).all()
+        if not devices:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No devices found in this device group"
+            )
+        
+        # Tạo sessions cho từng thiết bị
+        session_ids = []
+        for device in devices:
+            session = SessionModal(
+                operator_id=assign_profile_data.operator_id,
+                device_id=device.id,
+                status="active"
+            )
+            db.add(session)
+            db.flush()
+            session_ids.append(session.id)
+
         db.commit()
         db.refresh(profile_user)
         
         return AssignProfileResponse(
             profile_id=profile_user.profile_id,
             operator_id=profile_user.operator_id,
+            session_ids=session_ids
         )
 
     except HTTPException as e:

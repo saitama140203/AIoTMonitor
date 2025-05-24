@@ -19,8 +19,10 @@ class TerminateSessionRequest(BaseModel):
 class SessionHistoryItem(BaseModel):
     session_id: int
     device_name: str
+    operator_name: str
     end_status: str
     ended_at: datetime
+    start_time: datetime
 
     class Config:
         orm_mode = True
