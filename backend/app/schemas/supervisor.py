@@ -22,7 +22,7 @@ class SessionHistoryItem(BaseModel):
     operator_name: str
     end_status: str
     ended_at: datetime
-    start_time: datetime
+    connected_time: datetime
 
     class Config:
         orm_mode = True

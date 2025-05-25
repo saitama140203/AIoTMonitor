@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// Không cần import ActiveSessions hay SessionHistory nữa
 </script>
 
 <template>

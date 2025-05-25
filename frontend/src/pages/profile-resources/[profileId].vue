@@ -161,6 +161,8 @@ async function loadProfileData() {
   }
 }
 
+const token = localStorage.getItem('aiot_accesstoken') || ''
+
 async function onConnectDevice(device: Device) {
   if (connectedDevice.value && connectedDevice.value.id === device.id) {
     alert('Đã kết nối với thiết bị này.')
@@ -188,15 +190,30 @@ async function onConnectDevice(device: Device) {
   })
 
   const sessionId = response.data.session_id
+
   terminalRef.value?.connect({
     host: device.ip,
     port: device.port,
     username: 'root',
     password: 'secret123',
     profile_id: profileId.value,
+    operator_id: operatorId,
     session_id: sessionId
 
   })
+  try {
+    await axios.post(`http://localhost:8000/api/v1/supervisor/sessions/${sessionId}/connect`,null, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    })
+  } catch (error) {
+    console.error("Không thể đánh dấu thời gian kết nối:", error)
+    alert("Lỗi khi đánh dấu thời gian kết nối phiên làm việc")
+    // Có thể bạn muốn xử lý tiếp hoặc return luôn tùy nhu cầu
+    return
+  }
 }
 
 function disconnectDevice() {

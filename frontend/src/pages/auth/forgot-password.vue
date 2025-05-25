@@ -46,16 +46,16 @@ const onSubmit = form.handleSubmit(async (values) => {
     <Card class="mx-auto max-w-sm">
       <CardHeader>
         <CardTitle class="text-2xl text-center">
-          Reset Password
+          Reset Admin Password
         </CardTitle>
         <CardDescription class="text-center">
-          Enter admin username to reset password.
+          Enter to reset password.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div class="grid gap-4">
           <div class="grid gap-2">
-            <InputValidator id="email" type="text" label="Username" placeholder="Enter admin username" name="username" />
+            <InputValidator id="email"label="" placeholder="Enter admin username" name="username" value="admin"  type="hidden" />
           </div>
           <Button
             type="submit"

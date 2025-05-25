@@ -7,6 +7,7 @@ from app.api.v1.deps import get_db, get_current_supervisor,get_current_user
 from app.models import User
 from app.models.session import Session as SessionModal
 from fastapi import Query
+from datetime import datetime
 
 router = APIRouter()
 
@@ -66,3 +67,17 @@ def list_session_history(
         return SupervisorService.get_session_history(db)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.post("/sessions/{session_id}/connect", summary="Mark session as connected (SSH started)")
+def mark_connected_time(
+    session_id: int,
+    db: Session = Depends(get_db),
+    _= Depends(get_current_user) 
+):
+    session = db.query(SessionModal).filter(SessionModal.id == session_id).first()
+    if not session:
+        raise HTTPException(404, "Session not found")
+
+    session.connected_time = datetime.utcnow()
+    db.commit()
+    return {"message": "Connected time recorded"}

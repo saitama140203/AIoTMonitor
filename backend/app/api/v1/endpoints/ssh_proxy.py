@@ -1,39 +1,16 @@
 import asyncio
 import threading
 import json
+import datetime
 from contextlib import suppress
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import paramiko
 from app.services.supervisor import SupervisorService
-from app.models.session import Session as SessionModel
+from app.models.session import Session as SessionModel,SessionHistory
 from app.api.v1.deps import get_db
 from fastapi import Depends
-from sqlalchemy.orm import Session as DBSession
 
 router = APIRouter()
-
-# class OperatorConnectionManager:
-#     def __init__(self):
-#         self.connections: dict[str, WebSocket] = {}  # Lưu theo session_id
-
-#     async def connect(self, session_id: str, ws: WebSocket):
-#         await ws.accept()
-#         self.connections[session_id] = ws
-
-#     def disconnect(self, session_id: str):
-#         with suppress(Exception):
-#             self.connections.pop(session_id, None)
-
-#     async def send_terminate(self, session_id: str):
-#         ws = self.connections.get(session_id)
-#         if ws:
-#             try:
-#                 await ws.send_json({"type": "terminate"})
-#             except Exception:
-#                 self.disconnect(session_id)
-
-# # Khởi tạo global instance
-# operator_manager = OperatorConnectionManager()
 
 class SupervisorConnectionManager:
     def __init__(self):
@@ -77,6 +54,7 @@ async def ssh_ws(ws: WebSocket):
     port = cfg.get("port", 22)
     username = cfg["username"]
     password = cfg["password"]
+    operator_id = cfg.get("operator_id")
     session_id = cfg.get("session_id")
 
     if session_id:
@@ -97,6 +75,9 @@ async def ssh_ws(ws: WebSocket):
     # 2. Kết nối SSH
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+    connected_time = datetime.datetime.now(datetime.timezone.utc)
+
     try:
         client.connect(host, port=port, username=username, password=password, look_for_keys=False, allow_agent=False)
     except Exception as e:
@@ -114,7 +95,9 @@ async def ssh_ws(ws: WebSocket):
     stop_event = threading.Event()
 
     # 4. Thread đọc SSH -> WebSocket
+    ssh_output_log = ""
     def read_ssh():
+        nonlocal ssh_output_log
         try:
             while not stop_event.is_set():
                 if chan.recv_ready():
@@ -122,6 +105,7 @@ async def ssh_ws(ws: WebSocket):
                     if data:
                         text = data.decode(errors="ignore")
                         # Gửi cho operator (gốc)
+                        ssh_output_log += text
                         loop.call_soon_threadsafe(asyncio.create_task, ws.send_text(text))
                         # Gửi cho tất cả supervisor
                         loop.call_soon_threadsafe(asyncio.create_task, supervisor_manager.broadcast({
@@ -206,5 +190,19 @@ async def ssh_ws(ws: WebSocket):
         stop_event.set()
         chan.close()
         client.close()
+        try:
+            db = next(get_db())
+            new_history = SessionHistory(
+                session_id=session_id,
+                history_text=ssh_output_log,
+                end_status="killed",  
+                terminated_by=operator_id,
+                connected_time=connected_time,
+            )
+            db.add(new_history)
+            db.commit()
+        except Exception as e:
+                    print("Failed to update session_history on WebSocket close:", e)  
         with suppress(Exception):
             await ws.close()
+    

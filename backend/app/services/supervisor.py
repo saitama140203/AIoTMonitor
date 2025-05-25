@@ -55,33 +55,20 @@ class SupervisorService:
         try:
             session.status = "terminated"
             session.end_time = datetime.utcnow()
-            history = SessionHistory(
-                session_id=session_id,
-                terminated_by=request.terminated_by,
-                end_status="killed"
-            )
-            db.add(history)
+            # history = SessionHistory(
+            #     session_id=session_id,
+            #     terminated_by=request.terminated_by,
+            #     end_status="killed",
+            #     connected_time=session.connected_time,
+            #     history_text=request.reason   
+            # )
+            # db.add(history)
             db.commit()
             db.refresh(session)
         except Exception as e:
             db.rollback()
             raise e
 
-
-    # @staticmethod
-    # def get_session_history(db: DBSession) -> List[SessionHistoryItem]:
-    #     histories = db.query(SessionHistory)\
-    #         .options(joinedload(SessionHistory.session).joinedload(SessionModal.device))\
-    #         .all()
-
-    #     return [
-    #         SessionHistoryItem(
-    #             session_id=history.session_id,
-    #             device_name=history.session.device.name,
-    #             end_status=history.end_status,
-    #             ended_at=history.created_at
-    #         ) for history in histories
-    #     ]
 
     @staticmethod
     def get_session_history(db: DBSession) -> List[SessionHistoryItem]:
@@ -101,7 +88,7 @@ class SupervisorService:
                 operator_name=history.session.operator.username,
                 end_status=history.end_status,
                 ended_at=history.created_at,
-                start_time=history.session.start_time 
+                connected_time=history.connected_time
             ) for history in histories
         ]
     

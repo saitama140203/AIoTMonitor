@@ -13,7 +13,8 @@ class Session(Base):
     start_time = Column(DateTime(timezone=True), server_default=func.now())
     end_time = Column(DateTime(timezone=True))
     current_command = Column(String(255))
-    
+    connected_time = Column(DateTime(timezone=True))  
+
     # Relationships
     operator = relationship("User", back_populates="sessions")
     device = relationship("Device")
@@ -26,8 +27,10 @@ class SessionHistory(Base):
     id = Column(Integer, primary_key=True)
     session_id = Column(Integer, ForeignKey("sessions.id"))
     terminated_by = Column(Integer, ForeignKey("users.id"))
+    connected_time = Column(DateTime(timezone=True))
     end_status = Column(String(50))  # e.g., "completed", "killed", "failed"
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    history_text = Column(String) 
     
     # Relationships
     session = relationship("Session", back_populates="session_history")

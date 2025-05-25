@@ -114,7 +114,7 @@ const sortOrder = ref<"asc" | "desc">("desc");
 const processSessions = (data: any[]) => {
   return data.map((item) => {
     const ended = new Date(item.ended_at).getTime();
-    const started = new Date(item.start_time).getTime();
+    const started = new Date(item.connected_time).getTime();
     const durationSeconds = Math.max(0, Math.floor((ended - started) / 1000));
 
     return {
