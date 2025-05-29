@@ -22,7 +22,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr
+        <tr 
           v-for="session in sessions"
           :key="session.session_id"
           class="hover:bg-gray-50"
@@ -57,6 +57,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import axios from 'axios'
+const connectedSessions = ref<Set<number>>(new Set())
+
+const connectedSessionsList = computed(() =>
+  sessions.value.filter(s => connectedSessions.value.has(s.session_id))
+)
 
 interface Session {
   session_id: number
@@ -134,15 +140,23 @@ let socket: WebSocket
 
 const connectWebSocket = () => {
   socket = new WebSocket('ws://localhost:8000/api/v1/ssh_proxy/supervisor')
-
   socket.onopen = () => {
     console.log('✅ WebSocket connected')
   }
 
 socket.onmessage = (event) => {
+  
   try {
     const data = JSON.parse(event.data)
 
+    if (data.session_id) {
+      const oldSession = sessions.value.find(s => s.session_id === data.session_id)
+      const isDifferent = !oldSession || JSON.stringify(oldSession) !== JSON.stringify({...oldSession, ...data})
+      if (isDifferent) {
+        fetchSessions()  
+      }
+      return
+    }
     if (data.type === 'current_command') {
       console.log('Supervisor received command:', data.current_command)
     }
@@ -156,14 +170,37 @@ socket.onmessage = (event) => {
     }
 
     // Trường hợp đầy đủ session data
-    if (data.session_id) {
-      const index = sessions.value.findIndex(s => s.session_id === data.session_id)
-      if (index !== -1) {
-        sessions.value[index] = { ...sessions.value[index], ...data }
-      } else {
-        sessions.value.push(data)
-      }
+ if (data.session_id) {
+  const sessionId = data.session_id
+
+  // Nếu chưa gửi connect request thì gửi
+    if (!connectedSessions.value.has(sessionId)) {
+      axios.post(`http://localhost:8000/api/v1/supervisor/sessions/${sessionId}/connect`, null, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      }).then(() => {
+        console.log(`✅ Connected to session ${sessionId}`)
+        connectedSessions.value.add(sessionId)
+      }).catch(() => {
+        console.error(`❌ Failed to notify backend for session ${sessionId}`)
+      })
     }
+
+    // Cập nhật hoặc thêm session
+    const index = sessions.value.findIndex(s => s.session_id === sessionId)
+    if (data.session_id) {
+    const index = sessions.value.findIndex(s => s.session_id === data.session_id)
+    if (index !== -1) {
+      sessions.value[index] = { ...sessions.value[index], ...data }
+    } else {
+      sessions.value.push(data)
+    }
+  }
+
+ }
+
 
   } catch (err) {
     console.error('Invalid WebSocket data:', event.data)
@@ -184,6 +221,7 @@ socket.onmessage = (event) => {
 onMounted(() => {
   fetchSessions()
   connectWebSocket()
+
 })
 
 onUnmounted(() => {

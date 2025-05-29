@@ -64,7 +64,7 @@ const listNav = ref([
   {
     id: 9,
     icon: 'IconHistory',
-    title: 'Session History',
+    title: 'View History',
     url: '/supervisor/history',
     roles: [UserRole.SUPERVISOR],
   },

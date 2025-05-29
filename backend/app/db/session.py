@@ -8,6 +8,9 @@ from app.models import session as session_models  # Import models session
 print("Creating database engine with URI:", settings.SQLALCHEMY_DATABASE_URI)
 engine = create_engine(
     settings.SQLALCHEMY_DATABASE_URI,
+    pool_size=20,           
+    max_overflow=30,      
+    pool_timeout=30,
     pool_pre_ping=True,  # Kiểm tra kết nối trước khi sử dụng
     connect_args={"check_same_thread": False} if "sqlite" in settings.SQLALCHEMY_DATABASE_URI else {}
 )

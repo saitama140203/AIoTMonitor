@@ -4,8 +4,8 @@ import { setupLayouts } from 'virtual:generated-layouts'
 import { createRouter, createWebHistory } from 'vue-router'
 import { UserRole } from './types'
 import ActiveSessions from '@/components/supervisor/ActiveSessions.vue'
-import SessionHistory from '@/components/supervisor/SessionHistory.vue'
-import SupervisorDashboard from '@/pages/supervisor/SupervisorDashboard.vue'
+import ViewHistory from '@/components/supervisor/HistoryView.vue'
+import SupervisorDashboard from '@/layouts/default.vue'
 
 const manualRoutes = [
   {
@@ -28,8 +28,8 @@ const manualRoutes = [
       },
       {
         path: 'history',
-        name: 'SupervisorSessionHistory',
-        component: SessionHistory,
+        name: 'SupervisorViewHistory',
+        component: ViewHistory,
         meta: {
           title: 'Session History',
           requiresAuth: true,
@@ -44,7 +44,6 @@ const manualRoutes = [
     }
   }
 ]
-
 
 const routes = setupLayouts(generatedRoutes).concat(manualRoutes)
 

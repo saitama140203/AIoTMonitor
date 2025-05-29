@@ -2,6 +2,7 @@ from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Enum
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
+from datetime import datetime
 
 class Session(Base):
     __tablename__ = "sessions"
@@ -19,7 +20,7 @@ class Session(Base):
     operator = relationship("User", back_populates="sessions")
     device = relationship("Device")
     session_history = relationship("SessionHistory", back_populates="session", cascade="all, delete-orphan")
-
+    commands = relationship("SessionCommand", back_populates="session", cascade="all, delete-orphan")
 
 class SessionHistory(Base):
     __tablename__ = "session_history"
@@ -35,3 +36,12 @@ class SessionHistory(Base):
     # Relationships
     session = relationship("Session", back_populates="session_history")
     terminator = relationship("User", back_populates="terminated_sessions", foreign_keys=[terminated_by])
+
+class SessionCommand(Base):
+    __tablename__ = "session_commands"
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("sessions.id"), nullable=False, index=True)
+    command_text = Column(String, nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    session = relationship("Session", back_populates="commands")

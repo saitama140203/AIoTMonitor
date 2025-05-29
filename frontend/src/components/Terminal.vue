@@ -8,6 +8,16 @@ import { Terminal as XTerminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import 'xterm/css/xterm.css'
 
+const command = ref('')
+
+const emit = defineEmits(['send-command'])
+
+function handleSend(cmd: string) {
+  if (!cmd.trim()) return
+  emit('send-command', cmd.trim())
+}
+
+
 const termContainer = ref<HTMLElement | null>(null)
 let term: XTerminal | null = null
 let fitAddon: FitAddon | null = null
@@ -47,6 +57,7 @@ function initTerminal() {
 }
 
 function connect(config: any) {
+  console.log("Connecting to:", config)
   if (!config?.host) return
   ws?.close()
   currentConfig = config
@@ -65,48 +76,51 @@ function connect(config: any) {
     term?.writeln(`\r\n🔗 Đã kết nối tới ${config.host}\r\n`)
     scrollToBottom()
   }
-  ws.onmessage = e => {
-    term?.write(e.data)
-    scrollToBottom()
+  ws.onmessage = (e) => {
+    if (typeof e.data === 'string') {
+      console.log('Received string:', e.data);
+      term?.write(e.data);
+    } else if (e.data instanceof Blob) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = reader.result as string;
+        console.log('Received blob:', text);
+        term?.write(text);
+      };
+      reader.readAsText(e.data);
+    } else if (e.data instanceof ArrayBuffer) {
+      const text = new TextDecoder().decode(e.data);
+      console.log('Received ArrayBuffer:', text);
+      term?.write(text);
+    }
+    scrollToBottom();
   }
+
+
   ws.onclose = () => {
-    //term?.writeln('\r\n🔌 Đã ngắt kết nối')
-    //scrollToBottom()
-    let data = e.data;
-    let parsed = null;
-
-    // Thử parse JSON, nếu lỗi thì giữ nguyên text
-    try {
-      parsed = JSON.parse(data);
-    } catch {
-      parsed = null;
-    }
-
-    if (parsed && parsed.type === "terminate") {
-      // Backend đã gửi lệnh terminate session
-      term?.writeln('\r\n🔴 Phiên làm việc đã bị supervisor ngắt kết nối!\r\n')
-      scrollToBottom()
-      ws?.close()
-      alert("Phiên làm việc đã bị supervisor ngắt kết nối!")
-    } else if (typeof data === "string" && data.includes("Session terminated by supervisor")) {
-      // Trường hợp server gửi message thuần text
-      term?.writeln('\r\n🔴 Phiên làm việc đã bị supervisor ngắt kết nối!\r\n')
-      scrollToBottom()
-      ws?.close()
-      alert("Phiên làm việc đã bị supervisor ngắt kết nối!")
-    } else {
-      // Bình thường thì in ra terminal
-      term?.write(data)
-      scrollToBottom()
-    }
+    console.log("WebSocket đóng kết nối");
+    term?.writeln('\r\n🔌 Đã ngắt kết nối');
+    scrollToBottom();
   }
   ws.onerror = e => {
     term?.writeln('\r\n⚠️ Lỗi kết nối')
     scrollToBottom()
     console.error(e)
   }
-  term?.onData(d => ws?.send(d))
-  scrollToBottom()
+  term?.onData(data => {
+    if (data === '\r') { // Enter
+      handleSend(command.value)
+      command.value = ''
+      term.write('\r\n')
+    } else if (data === '\u007f') { // Backspace
+      if (command.value.length > 0) {
+        command.value = command.value.slice(0, -1)
+      }
+    } else {
+      command.value += data
+    }
+    ws?.send(data)
+  })
 }
 
 function disconnect() {
@@ -115,7 +129,15 @@ function disconnect() {
   scrollToBottom()
 }
 
-defineExpose({ connect, disconnect })
+function sendCommand(cmd: string) {
+  if (!cmd.trim()) return
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(cmd + '\r')
+  } else {
+    term?.writeln('\r\n⚠️ Chưa kết nối WebSocket!')
+  }
+}
+defineExpose({ connect, disconnect,sendCommand })
 
 onMounted(() => {
   initTerminal()

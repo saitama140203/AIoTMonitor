@@ -98,7 +98,7 @@
                 Đóng
               </button>
             </div>
-            <Terminal ref="terminalRef" class="h-full" v-if="connectedDevice" />
+            <Terminal ref="terminalRef" class="h-full" v-if="connectedDevice" @send-command="sendQuickCommand"/>
             <div v-else class="flex items-center justify-center h-full text-gray-500 font-medium text-lg">
               <span class="i-lucide-terminal mr-2" />Chọn thiết bị để kết nối SSH
             </div>
@@ -146,6 +146,10 @@ const operators = ref<Operator[]>([])
 const connectedDevice = ref<Device | null>(null)
 const terminalRef = ref<any>(null)
 
+const connectedSessions = ref<Set<number>>(new Set())
+
+const sessionId = ref<string | null>(null)
+
 async function loadProfileData() {
   try {
     const response = await getProfileResources(profileId.value, { skip: 0, limit: 1000 })
@@ -181,15 +185,24 @@ async function onConnectDevice(device: Device) {
   const user = JSON.parse(localStorage.getItem('aiot_user') || '{}')
   const operatorId = user?.user_id || 1
 
-  // Gọi API để lấy session_id từ bảng sessions
-  const response = await axios.get('http://localhost:8000/api/v1/supervisor/sessions', {
-    params: {
-      device_id: device.id,
-      operator_id: operatorId
+  // Gọi API tạo session mới
+  const createSessionResponse = await axios.post(
+    `http://localhost:8000/api/v1/supervisor/sessions`,
+    {
+      profile_id: profileId.value,
+      operator_id: operatorId,
+      device_id: device.id
+    },
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
     }
-  })
+  )
 
-  const sessionId = response.data.session_id
+  sessionId.value = createSessionResponse.data.session_id
+  if (!sessionId.value) throw new Error('Không nhận được session_id từ server')
 
   terminalRef.value?.connect({
     host: device.ip,
@@ -198,11 +211,11 @@ async function onConnectDevice(device: Device) {
     password: 'secret123',
     profile_id: profileId.value,
     operator_id: operatorId,
-    session_id: sessionId
-
+    device_id: device.id,
+    session_id: sessionId.value
   })
   try {
-    await axios.post(`http://localhost:8000/api/v1/supervisor/sessions/${sessionId}/connect`,null, {
+    await axios.post(`http://localhost:8000/api/v1/supervisor/sessions/${sessionId.value}/connect`,null, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json'
@@ -210,18 +223,23 @@ async function onConnectDevice(device: Device) {
     })
   } catch (error) {
     console.error("Không thể đánh dấu thời gian kết nối:", error)
-    alert("Lỗi khi đánh dấu thời gian kết nối phiên làm việc")
     // Có thể bạn muốn xử lý tiếp hoặc return luôn tùy nhu cầu
     return
   }
 }
 
-function disconnectDevice() {
-  terminalRef.value?.disconnect()
-  connectedDevice.value = null
+async function disconnectDevice() {
+  try {
+    await terminalRef.value?.disconnect?.()
+    await terminalRef.value?.port?.close?.()
+    terminalRef.value = null
+    connectedDevice.value = null
+  } catch (error) {
+    console.error("disconnectDevice error", error)
+  }
 }
 
-function sendQuickCommand(cmd: string) {
+async function sendQuickCommand(cmd: string) {
   if (!connectedDevice.value) {
     alert('Bạn cần kết nối thiết bị trước!')
     return
@@ -230,7 +248,39 @@ function sendQuickCommand(cmd: string) {
     alert('Lệnh không hợp lệ!')
     return
   }
-  terminalRef.value?.sendCommand(cmd)
+  try {
+    console.log('sendQuickCommand executed:', cmd);
+    
+    // Gọi API lưu command
+    const user = JSON.parse(localStorage.getItem('aiot_user') || '{}')
+    const operatorId = user?.user_id || 1
+    console.log('hihihaha',sessionId.value)
+    await axios.post(
+      `http://localhost:8000/api/v1/supervisor/execute-command`,
+      {
+        session_id: sessionId.value,
+        command_text: cmd,
+      }
+      ,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+  } catch (error) {
+    console.error('Lỗi khi gửi hoặc lưu lệnh:', error)
+    if (error.response) {
+      console.error('Response error:', error.response.data)
+    } else if (error.request) {
+      console.error('No response:', error.request)
+    } else {
+      console.error('Error setting up request:', error.message)
+    }
+    alert('Gửi hoặc lưu lệnh thất bại.')
+  }
 }
 
 function formatDate(dateString?: string) {

@@ -1,7 +1,7 @@
 <template>
   <div class="session-history">
     <div class="header">
-      <h3>Session History</h3>
+      <h3>View History</h3>
       <div class="controls">
         <input
           v-model="searchQuery"

@@ -55,18 +55,49 @@ async def ssh_ws(ws: WebSocket):
     username = cfg["username"]
     password = cfg["password"]
     operator_id = cfg.get("operator_id")
+    device_id = cfg.get("device_id")
     session_id = cfg.get("session_id")
 
-    if session_id:
-        try:
-            db = next(get_db())
-            session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
-            if session and session.status == "terminated":
-                session.status = "active"
-                db.commit()
-        except Exception as e:
-            print(f"Failed to update session status to active: {e}")
+    # if session_id:
+    #     try:
+    #         db = next(get_db())
+    #         session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+    #         if session and session.status == "terminated":
+    #             session.status = "active"
+    #             db.commit()
+    #     except Exception as e:
+    #         print(f"Failed to update session status to active: {e}")
 
+    # await supervisor_manager.broadcast({
+    #     "type": "session_connected",
+    #     "session_id": session_id
+    # })
+    db = next(get_db())
+    if not session_id:
+        # Nếu chưa truyền session_id => tạo mới session
+        if not operator_id or not device_id:
+            await ws.send_text("*** Missing operator_id or device_id to create session ***")
+            await ws.close()
+            return
+        
+        new_session = SupervisorService.create_session(db, operator_id, device_id)
+        session_id = new_session.id
+        session = new_session
+
+        # (Optional) Gửi lại session_id về frontend nếu frontend cần lưu
+        await ws.send_text(json.dumps({"type": "session_created", "session_id": session_id}))
+    else:
+        # Nếu có session_id => lấy session từ DB
+        session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+        if not session:
+            await ws.send_text("*** Invalid session_id ***")
+            await ws.close()
+            return
+        if session.status == "terminated":
+            session.status = "active"
+            db.commit()
+
+    # Gửi broadcast cho supervisor biết session đã bắt đầu
     await supervisor_manager.broadcast({
         "type": "session_connected",
         "session_id": session_id
@@ -184,14 +215,18 @@ async def ssh_ws(ws: WebSocket):
             chan.send(msg)
 
     except WebSocketDisconnect:
-        pass
+        print(f"Session {session_id} terminated due to disconnect")
     finally:
         check_task.cancel()
         stop_event.set()
         chan.close()
         client.close()
-        try:
+        try:    
             db = next(get_db())
+            session_db = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+            if session_db:
+                session_db.status = "terminated" 
+                db.commit()
             new_history = SessionHistory(
                 session_id=session_id,
                 history_text=ssh_output_log,

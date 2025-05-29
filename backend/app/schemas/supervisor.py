@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional,List
 
 class SessionDetail(BaseModel):
     session_id: int
@@ -21,8 +22,23 @@ class SessionHistoryItem(BaseModel):
     device_name: str
     operator_name: str
     end_status: str
-    ended_at: datetime
-    connected_time: datetime
+    ended_at: Optional[datetime] = None 
+    connected_time: Optional[datetime] = None
+    last_commands: Optional[List[dict]] = []
+    all_commands: Optional[List[dict]] = []
 
     class Config:
         orm_mode = True
+
+
+class SessionCreateSchema(BaseModel):
+    operator_id: int
+    device_id: int
+
+    class Config:
+        orm_mode = True
+
+class CommandCreate(BaseModel):
+    session_id: int
+    command_text: str
+
