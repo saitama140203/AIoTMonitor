@@ -226,6 +226,7 @@ async def ssh_ws(ws: WebSocket):
             session_db = db.query(SessionModel).filter(SessionModel.id == session_id).first()
             if session_db:
                 session_db.status = "terminated" 
+                session_db.end_time = datetime.datetime.now(datetime.timezone.utc) 
                 db.commit()
             new_history = SessionHistory(
                 session_id=session_id,
